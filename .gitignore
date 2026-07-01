@@ -1,0 +1,5 @@
+/.claude
+/.pytest_cache
+/.venv
+/docs
+/kasra-audit.jsonl

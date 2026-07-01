@@ -1,0 +1,18 @@
+# Kasra L3 Rule Engine — User Configuration Overrides
+# Uncomment and modify to override default settings.
+
+# engine:
+#   max_concurrent_rules: 40
+
+# pipeline:
+#   output:
+#     stream_buffer_size: 8192
+#     boundary_type: line
+
+# overrides:
+#   severity:
+#     I-08: P2
+#   action:
+#     I-08: warn
+#   disabled_rules:
+#     - I-99

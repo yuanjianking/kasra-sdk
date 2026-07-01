@@ -1,0 +1,2636 @@
+{
+  "bundle": {
+    "series": "O",
+    "name": "Output Security Rules",
+    "description": "Detection rules for AI -> user output stage -- code safety, credential leak, PII, compliance, supply chain, content safety, i18n engineering",
+    "version": "2.0.0",
+    "total": 51
+  },
+  "rules": [
+    {
+      "id": "O-01",
+      "name": "Dangerous Function Call",
+      "description": "Detect AI output code containing dangerous function calls across all major languages",
+      "category": "code_safety",
+      "severity": "P0",
+      "action": "warn",
+      "applicable_stages": [
+        "output"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "\\b(?:eval|exec)\\s*\\(",
+            "confidence": 0.8
+          },
+          {
+            "type": "regex",
+            "value": "\\b(?:system|popen|__import__)\\s*\\(",
+            "confidence": 0.8
+          },
+          {
+            "type": "regex",
+            "value": "subprocess\\.(?:call|Popen|run)\\s*\\(",
+            "confidence": 0.85
+          },
+          {
+            "type": "regex",
+            "value": "Runtime\\.getRuntime\\(\\)\\.exec\\s*\\(",
+            "confidence": 0.85
+          },
+          {
+            "type": "regex",
+            "value": "new\\s+ProcessBuilder\\s*\\(",
+            "confidence": 0.75
+          },
+          {
+            "type": "regex",
+            "value": "Class\\.forName\\s*\\(",
+            "confidence": 0.6
+          },
+          {
+            "type": "regex",
+            "value": "Process\\.Start\\s*\\(",
+            "confidence": 0.85
+          },
+          {
+            "type": "regex",
+            "value": "exec\\.Command\\s*\\(",
+            "confidence": 0.85
+          },
+          {
+            "type": "regex",
+            "value": "os\\.StartProcess\\s*\\(",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "\\bassert\\s*\\(\\s*\\$",
+            "confidence": 0.6
+          },
+          {
+            "type": "regex",
+            "value": "(?:shell_exec|exec|system)\\s*\\(\\s*\\$",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "\\bcreate_function\\s*\\(",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "std::process::Command",
+            "confidence": 0.85
+          },
+          {
+            "type": "regex",
+            "value": "Command::new\\s*\\(\\s*[\"']sh[\"']\\s*\\)",
+            "confidence": 0.8
+          },
+          {
+            "type": "regex",
+            "value": "new\\s+Function\\s*\\(\\s*[\"']",
+            "confidence": 0.7
+          }
+        ],
+        "languages": [
+          "python",
+          "javascript",
+          "typescript",
+          "java",
+          "go",
+          "rust",
+          "ruby",
+          "php",
+          "cpp",
+          "csharp",
+          "kotlin",
+          "swift",
+          "bash",
+          "powershell"
+        ]
+      },
+      "config": {
+        "max_matches": 20,
+        "scopes": [
+          "output"
+        ]
+      }
+    },
+    {
+      "id": "O-02",
+      "name": "Dangerous Shell Command",
+      "description": "Detect AI output containing destructive shell commands",
+      "category": "code_safety",
+      "severity": "P0",
+      "action": "block",
+      "applicable_stages": [
+        "output"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "rm\\s+(?:-rf|\\/|\\-rf\\s+\\/|\\-rf\\s+\\/\\*)",
+            "confidence": 0.9
+          },
+          {
+            "type": "regex",
+            "value": ":\\s*\\(\\s*\\)\\s*\\{\\s*:\\s*\\|\\s*:\\s*&\\s*\\}\\s*;\\s*:",
+            "confidence": 0.95
+          },
+          {
+            "type": "regex",
+            "value": "dd\\s+if=\\s*\\/dev\\/zero\\s+of=\\s*\\/dev\\/sd",
+            "confidence": 0.95
+          },
+          {
+            "type": "regex",
+            "value": "\\bmkfs\\.\\w+\\s+\\/dev\\/",
+            "confidence": 0.9
+          },
+          {
+            "type": "regex",
+            "value": "chmod\\s+-R\\s+777\\s+\\/",
+            "confidence": 0.9
+          },
+          {
+            "type": "regex",
+            "value": "chown\\s+.*\\s+\\/(?:etc|usr|bin|boot|root)",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "mv\\s+\\/\\s+\\/dev\\/null",
+            "confidence": 0.9
+          },
+          {
+            "type": "regex",
+            "value": "shutdown\\s+(?:\\-h\\s+now|\\-r\\s+now|/s)",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "sysctl\\s+\\-w\\s+net\\.ipv4\\.ip_forward\\s*=\\s*1",
+            "confidence": 0.7
+          }
+        ]
+      },
+      "config": {
+        "max_matches": 10,
+        "scopes": [
+          "output"
+        ]
+      }
+    },
+    {
+      "id": "O-03",
+      "name": "OS Command Injection in Generated Code",
+      "description": "Detect AI-generated code containing command injection vulnerabilities",
+      "category": "code_safety",
+      "severity": "P0",
+      "action": "warn",
+      "applicable_stages": [
+        "output"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "subprocess\\.(?:call|Popen|run)\\s*\\([^)]*\\+\\s+[^)]*shell=True",
+            "confidence": 0.85
+          },
+          {
+            "type": "regex",
+            "value": "exec\\.Command\\s*\\(\\s*[\"']sh[\"']\\s*,\\s*[\"']-c[\"']\\s*,\\s*[^)]+",
+            "confidence": 0.85
+          },
+          {
+            "type": "regex",
+            "value": "Runtime\\.getRuntime\\(\\)\\.exec\\s*\\(\\s*[\\\"'](?:(?:ping|nslookup|traceroute)\\s+[\\\"']\\s*\\+\\s*[A-Za-z_])",
+            "confidence": 0.85
+          },
+          {
+            "type": "regex",
+            "value": "`[^`]*\\#\\{?[A-Za-z_][A-Za-z0-9_]*\\}?[^`]*`",
+            "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "shell_exec\\s*\\(\\s*[\"'][^\"']*\\${1,2}[A-Za-z_]",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "ProcessBuilder\\s*\\([^)]*\\).*start\\(\\)",
+            "confidence": 0.6
+          },
+          {
+            "type": "regex",
+            "value": "\\bexec\\s*\\(\\s*[\"'][^\"']+\\+[^\"']+[\"']\\s*\\)",
+            "confidence": 0.85
+          }
+        ],
+        "languages": [
+          "python",
+          "javascript",
+          "typescript",
+          "java",
+          "go",
+          "ruby",
+          "php"
+        ]
+      },
+      "config": {
+        "max_matches": 10,
+        "scopes": [
+          "output"
+        ]
+      }
+    },
+    {
+      "id": "O-04",
+      "name": "SQL Injection in Generated Code",
+      "description": "Detect AI output code using string concatenation to build SQL queries. Provide parameterised query alternatives",
+      "category": "code_safety",
+      "severity": "P2",
+      "action": "warn",
+      "applicable_stages": [
+        "output"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "cursor\\.execute\\s*\\(\\s*(?:f[\\\"']|[\\\"'][^\\\"']*\\+[^\\\"']*[\\\"']|[^)]*%\\s*\\()",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "\\b(?:SELECT|INSERT\\s+INTO|UPDATE|DELETE\\s+FROM)\\b[^;]*\\+\\s*(?:[A-Za-z_][A-Za-z0-9_]*|[A-Za-z_][A-Za-z0-9_]*\\s*\\+\\s*[\\\"'])",
+            "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "\\b(?:psycopg2|pymysql|sqlite3)\\.connect[^)]*\\)[\\s\\S]{0,100}?execute\\s*\\(\\s*(?:f[\\\"']|[\\\"'][^\\\"']*\\+|%\\s*\\()",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "fmt\\.Sprintf\\s*\\(\\s*[\\\"'](?:SELECT|INSERT|UPDATE|DELETE)",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "\\b(?:query|sql)\\s*(?::|=)\\s*[\"'][^\"']*\\{[^}]+\\}",
+            "confidence": 0.6
+          },
+          {
+            "type": "regex",
+            "value": "new\\s+Statement\\s*\\(|createStatement\\s*\\(|prepareStatement\\s*\\([^)]*\\+",
+            "confidence": 0.6
+          },
+          {
+            "type": "regex",
+            "value": "SqlCommand\\s*\\(\\s*[\"'][^\"']*\\+",
+            "confidence": 0.65
+          }
+        ],
+        "languages": [
+          "python",
+          "javascript",
+          "typescript",
+          "java",
+          "go",
+          "ruby",
+          "php",
+          "csharp"
+        ]
+      },
+      "config": {
+        "max_matches": 10,
+        "scopes": [
+          "output"
+        ]
+      }
+    },
+    {
+      "id": "O-05",
+      "name": "NoSQL Injection in Generated Code",
+      "description": "Detect AI-generated code with NoSQL injection: MongoDB $where with user input, insecure JSON query construction, Couchbase N1QL injection",
+      "category": "code_safety",
+      "severity": "P2",
+      "action": "warn",
+      "applicable_stages": [
+        "output"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "\\$where\\s*[:=]\\s*[\"'][^\"']*\\{?[A-Za-z_]",
+            "confidence": 0.75
+          },
+          {
+            "type": "regex",
+            "value": "\\$where\\s*[:=]\\s*[\"']\\s*this\\.[^\"']+[\"']",
+            "confidence": 0.6
+          },
+          {
+            "type": "regex",
+            "value": "find\\s*\\(\\s*\\{[^}]*\\$where",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "N1QLQuery\\s*\\(\\s*[\"'][^\"']*\\+[A-Za-z_]",
+            "confidence": 0.65
+          },
+          {
+            "type": "regex",
+            "value": "findByIdAnd(?:Update|Delete)\\s*\\(\\s*[A-Za-z_][A-Za-z0-9_]*\\s*,",
+            "confidence": 0.4
+          },
+          {
+            "type": "regex",
+            "value": "\\b(?:mongodb|mongoose)\\.(?:connect|model)\\s*\\([^)]*\\{",
+            "confidence": 0.5
+          }
+        ],
+        "languages": [
+          "python",
+          "javascript",
+          "typescript"
+        ]
+      },
+      "config": {
+        "max_matches": 10,
+        "scopes": [
+          "output"
+        ]
+      }
+    },
+    {
+      "id": "O-06",
+      "name": "Empty Exception Handler",
+      "description": "Detect AI output code containing empty exception handlers across all languages",
+      "category": "code_safety",
+      "severity": "P2",
+      "action": "warn",
+      "applicable_stages": [
+        "output"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "except\\s*(?:[A-Za-z_][A-Za-z0-9_]*)?\\s*:\\s*\\n\\s*pass\\b",
+            "confidence": 0.85
+          },
+          {
+            "type": "regex",
+            "value": "catch\\s*\\(\\s*(?:[A-Za-z_][A-Za-z0-9_]*|\\w+\\s+\\w+)?\\s*\\)\\s*\\{\\s*\\}",
+            "confidence": 0.75
+          },
+          {
+            "type": "regex",
+            "value": "catch\\s*\\(\\s*(?:_|[A-Za-z_][A-Za-z0-9_]*)\\s*\\)\\s*\\{\\s*\\n\\s*\\}",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "if\\s+err\\s+!=\\s+nil\\s*\\{\\s*\\n\\s*return\\b",
+            "confidence": 0.65
+          },
+          {
+            "type": "regex",
+            "value": "\\/\\/\\s*(?:swallow|ignore|silently|nothing|suppress)\\s*(?:error|exception)?",
+            "confidence": 0.6
+          },
+          {
+            "type": "regex",
+            "value": "catch\\s+\\{\\s*\\}",
+            "confidence": 0.7
+          }
+        ],
+        "languages": [
+          "python",
+          "javascript",
+          "typescript",
+          "java",
+          "go",
+          "rust",
+          "ruby",
+          "php",
+          "cpp",
+          "csharp",
+          "swift",
+          "kotlin"
+        ]
+      },
+      "config": {
+        "max_matches": 10,
+        "scopes": [
+          "output"
+        ]
+      }
+    },
+    {
+      "id": "O-07",
+      "name": "Insecure Randomness",
+      "description": "Detect insecure random number generators in security-sensitive contexts",
+      "category": "code_safety",
+      "severity": "P2",
+      "action": "warn",
+      "applicable_stages": [
+        "output"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "^import\\s+random$|^from\\s+random\\s+import",
+            "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "Math\\.random\\s*\\(\\s*\\)",
+            "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "java\\.util\\.Random\\b",
+            "confidence": 0.6
+          },
+          {
+            "type": "regex",
+            "value": "new\\s+Random\\s*\\(\\s*\\)",
+            "confidence": 0.4
+          },
+          {
+            "type": "regex",
+            "value": "\\brand\\s*\\(\\s*\\)|\\bmt_rand\\s*\\(\\s*\\)",
+            "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "math/rand\"|\"math/rand",
+            "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "\\brand\\s*\\(\\s*\\d|\\brand\\.(?:randint|choice|sample|shuffle|random|uniform|gauss)",
+            "confidence": 0.5
+          },
+          {
+            "type": "keyword",
+            "value": "import random",
+            "confidence": 0.5
+          }
+        ],
+        "languages": [
+          "python",
+          "javascript",
+          "typescript",
+          "java",
+          "go",
+          "rust",
+          "ruby",
+          "php",
+          "csharp",
+          "kotlin"
+        ]
+      },
+      "config": {
+        "max_matches": 10,
+        "scopes": [
+          "output"
+        ]
+      }
+    },
+    {
+      "id": "O-08",
+      "name": "XXE in Generated Code",
+      "description": "Detect AI-generated code with XML External Entity injection vulnerabilities",
+      "category": "code_safety",
+      "severity": "P2",
+      "action": "warn",
+      "applicable_stages": [
+        "output"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "\\b(?:etree|lxml)\\.(?:fromstring|parse|XML)\\s*\\([^)]*\\bresolve_entities\\s*(?:!=|!=\\s*False|=|==\\s*True)",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "DocumentBuilderFactory\\.newInstance\\(\\)[^;]*setFeature\\s*\\(\\s*[\"\\']http:\\/\\/apache\\.org\\/xml\\/features\\/[^\"\\']*xxe",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "simplexml_load_string\\s*\\(",
+            "confidence": 0.6
+          },
+          {
+            "type": "regex",
+            "value": "new\\s+XmlDocument\\s*\\([^)]*\\)\\s*\\{[^}]*\\bXmlResolver\\s*=\\s*null",
+            "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "xml\\.Decoder\\s*\\{[^}]*\\bStrict\\s*=\\s*false",
+            "confidence": 0.65
+          }
+        ],
+        "languages": [
+          "python",
+          "java",
+          "php",
+          "csharp",
+          "go",
+          "ruby",
+          "rust"
+        ]
+      },
+      "config": {
+        "max_matches": 10,
+        "scopes": [
+          "output"
+        ]
+      }
+    },
+    {
+      "id": "O-09",
+      "name": "SSTI in Generated Code",
+      "description": "Detect AI-generated code containing Server-Side Template Injection risks",
+      "category": "code_safety",
+      "severity": "P2",
+      "action": "warn",
+      "applicable_stages": [
+        "output"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "render_template_string\\s*\\(\\s*[\"'][^\"']*\\+[A-Za-z_]",
+            "confidence": 0.75
+          },
+          {
+            "type": "regex",
+            "value": "render_template_string\\s*\\(\\s*(?:f[\"']|[\"'][^\"']*\\{[^}]+\\})",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "Template\\s*\\(\\s*[\"'][^\"']*\\+[^\"']+[\"']\\s*\\)\\s*\\.render",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "new\\s+Template\\s*\\(\\s*[\"'][^\"']*\\{[^}]+\\}",
+            "confidence": 0.65
+          },
+          {
+            "type": "regex",
+            "value": "Handlebars\\.compile\\s*\\(\\s*[A-Za-z_]\\w*\\s*\\+\\s*",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "freemarker\\.template\\..*Template\\s*\\(\\s*[\"'][^\"']*\\+",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "\\$smarty\\.fetch\\s*\\(\\s*[\"'][^\"']*\\$",
+            "confidence": 0.65
+          }
+        ],
+        "languages": [
+          "python",
+          "javascript",
+          "typescript",
+          "java",
+          "php",
+          "ruby"
+        ]
+      },
+      "config": {
+        "max_matches": 10,
+        "scopes": [
+          "output"
+        ]
+      }
+    },
+    {
+      "id": "O-10",
+      "name": "LDAP Injection in Generated Code",
+      "description": "Detect AI-generated code with LDAP injection: query filter concatenation, DN concatenation, JNDI lookup with unescaped input",
+      "category": "code_safety",
+      "severity": "P2",
+      "action": "warn",
+      "applicable_stages": [
+        "output"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "[\"'][^\"']*\\b(?:uid|cn|sn|mail)\\s*=\\s*[\"']\\s*\\+\\s*[A-Za-z_][A-Za-z0-9_]*",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "DirContext\\.(?:search|lookup|list)\\s*\\(\\s*[\"'][^\"']*\\+\\s*[A-Za-z_]",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "InitialDirContext\\.(?:search|lookup)\\s*\\([^)]*\\+\\s*[A-Za-z_]",
+            "confidence": 0.65
+          }
+        ],
+        "languages": [
+          "java",
+          "python",
+          "php",
+          "csharp"
+        ]
+      },
+      "config": {
+        "max_matches": 10,
+        "scopes": [
+          "output"
+        ]
+      }
+    },
+    {
+      "id": "O-11",
+      "name": "Unsafe Deserialization",
+      "description": "Detect AI-generated code with unsafe deserialization patterns: pickle, yaml.load, ObjectInputStream, unserialize, Marshal.load, BinaryFormatter",
+      "category": "code_safety",
+      "severity": "P1",
+      "action": "warn",
+      "applicable_stages": [
+        "output"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "(?:pickle\\.(?:loads|load)|shelve\\.open)\\s*\\(",
+            "confidence": 0.8
+          },
+          {
+            "type": "regex",
+            "value": "yaml\\.(?:load|load_all)\\s*\\([^)]*\\b(?!SafeLoader|CSafeloader)",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "ObjectInputStream\\.(?:readObject|readUnshared)\\s*\\(",
+            "confidence": 0.8
+          },
+          {
+            "type": "regex",
+            "value": "\\bunserialize\\s*\\(\\s*\\$",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "Marshal\\.(?:load|restore)\\s*\\(",
+            "confidence": 0.8
+          },
+          {
+            "type": "regex",
+            "value": "new\\s+BinaryFormatter\\s*\\([^)]*\\).*\\.Deserialize\\s*\\(",
+            "confidence": 0.75
+          },
+          {
+            "type": "regex",
+            "value": "new\\s+SoapFormatter\\s*\\([^)]*\\).*\\.Deserialize\\s*\\(",
+            "confidence": 0.75
+          }
+        ],
+        "languages": [
+          "python",
+          "java",
+          "php",
+          "ruby",
+          "csharp",
+          "go"
+        ]
+      },
+      "config": {
+        "max_matches": 10,
+        "scopes": [
+          "output"
+        ]
+      }
+    },
+    {
+      "id": "O-12",
+      "name": "SSRF in Generated Code",
+      "description": "Detect AI-generated code with Server-Side Request Forgery vulnerabilities",
+      "category": "code_safety",
+      "severity": "P1",
+      "action": "warn",
+      "applicable_stages": [
+        "output"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "requests\\.(?:get|post|put|delete|patch|request)\\s*\\(\\s*[A-Za-z_][A-Za-z0-9_]*\\s*[,)]",
+            "confidence": 0.6
+          },
+          {
+            "type": "regex",
+            "value": "axios\\.(?:get|post|put|delete|patch|request)\\s*\\(\\s*[A-Za-z_][A-Za-z0-9_]*\\s*[,)]",
+            "confidence": 0.6
+          },
+          {
+            "type": "regex",
+            "value": "fetch\\s*\\(\\s*[A-Za-z_][A-Za-z0-9_]*\\s*[,)]",
+            "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "HttpClient\\.(?:execute|SendAsync)\\s*\\(\\s*[A-Za-z_]",
+            "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "url\\s*[+]=?\\s*[A-Za-z_][A-Za-z0-9_]*[\\s\\S]{0,50}requests\\.",
+            "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "open-uri\\s*\\(\\s*[A-Za-z_][A-Za-z0-9_]*",
+            "confidence": 0.6
+          }
+        ],
+        "languages": [
+          "python",
+          "javascript",
+          "typescript",
+          "java",
+          "go",
+          "ruby",
+          "php",
+          "csharp"
+        ]
+      },
+      "config": {
+        "max_matches": 10,
+        "scopes": [
+          "output"
+        ]
+      }
+    },
+    {
+      "id": "O-13",
+      "name": "Certificate Validation Disabled",
+      "description": "Detect AI output code disabling certificate validation across all languages",
+      "category": "code_safety",
+      "severity": "P1",
+      "action": "warn",
+      "applicable_stages": [
+        "output"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "verify\\s*=\\s*(?:False|false|0|'False'|\\\"False\\\")",
+            "confidence": 0.8
+          },
+          {
+            "type": "regex",
+            "value": "check_hostname\\s*=\\s*(?:False|false)",
+            "confidence": 0.75
+          },
+          {
+            "type": "regex",
+            "value": "(?:rejectUnauthorized|NODE_TLS_REJECT_UNAUTHORIZED)\\s*[:=]\\s*(?:false|0)",
+            "confidence": 0.4
+          },
+          {
+            "type": "regex",
+            "value": "InsecureSkipVerify\\s*[:=]\\s*(?:true|True)",
+            "confidence": 0.85
+          },
+          {
+            "type": "regex",
+            "value": "ServerCertificateValidationCallback\\s*[:=]\\s*\\{[^}]*true\\s*\\}",
+            "confidence": 0.75
+          },
+          {
+            "type": "regex",
+            "value": "VERIFY_NONE",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "trustAllCertificates|trust_all_certs|trust-all-certs",
+            "confidence": 0.7
+          }
+        ],
+        "languages": [
+          "python",
+          "javascript",
+          "typescript",
+          "java",
+          "go",
+          "csharp",
+          "ruby"
+        ]
+      },
+      "config": {
+        "max_matches": 10,
+        "scopes": [
+          "output"
+        ]
+      }
+    },
+    {
+      "id": "O-14",
+      "name": "Prototype Pollution",
+      "description": "Detect AI-generated JavaScript/TypeScript code with prototype pollution vulnerabilities",
+      "category": "code_safety",
+      "severity": "P1",
+      "action": "warn",
+      "applicable_stages": [
+        "output"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "_\\.(?:merge|mergeWith|defaults|defaultsDeep|assign)\\s*\\([^)]*\\bbody\\b",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "Object\\.(?:assign|create)\\s*\\(\\s*[A-Za-z_][A-Za-z0-9_]*\\s*,\\s*[A-Za-z_]\\w*\\b(?:body|input|query|param|user)",
+            "confidence": 0.65
+          },
+          {
+            "type": "regex",
+            "value": "\\[\\s*[\"']__proto__[\"']\\s*\\]",
+            "confidence": 0.85
+          },
+          {
+            "type": "regex",
+            "value": "\\[\\s*[\"']constructor[\"']\\s*\\]\\s*\\[\\s*[\"']prototype[\"']\\s*\\]",
+            "confidence": 0.85
+          },
+          {
+            "type": "regex",
+            "value": "\\b__proto__\\b",
+            "confidence": 0.6
+          },
+          {
+            "type": "regex",
+            "value": "\\.merge\\s*\\(\\s*\\{\\s*\\}\\s*,\\s*\\w+\\b(?:body|input|query|user|data)",
+            "confidence": 0.65
+          }
+        ],
+        "languages": [
+          "javascript",
+          "typescript"
+        ]
+      },
+      "config": {
+        "max_matches": 10,
+        "scopes": [
+          "output"
+        ]
+      }
+    },
+    {
+      "id": "O-15",
+      "name": "Path Traversal in Generated Code",
+      "description": "Detect AI-generated code with path traversal vulnerabilities",
+      "category": "code_safety",
+      "severity": "P1",
+      "action": "warn",
+      "applicable_stages": [
+        "output"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "(?:open|os\\.path\\.join)\\s*\\([^)]*[A-Za-z_]\\w*\\s*\\+\\s*[A-Za-z_]\\w*",
+            "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "Path\\.Combine\\s*\\([^)]*\\b(?:input|user|file|name|path|fileName|filename|dir)",
+            "confidence": 0.65
+          },
+          {
+            "type": "regex",
+            "value": "new\\s+File\\s*\\(\\s*[A-Za-z_]\\w*\\s*\\+\\s*[A-Za-z_]",
+            "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "os\\.path\\.join\\s*\\(\\s*(?:base|dir|root|path|folder|directory|upload|prefix)\\s*,\\s*\\w+\\b(?:name|file|input|user)",
+            "confidence": 0.65
+          }
+        ],
+        "languages": [
+          "python",
+          "javascript",
+          "typescript",
+          "java",
+          "go",
+          "ruby",
+          "php",
+          "csharp",
+          "cpp",
+          "rust"
+        ]
+      },
+      "config": {
+        "max_matches": 10,
+        "scopes": [
+          "output"
+        ]
+      }
+    },
+    {
+      "id": "O-16",
+      "name": "ReDoS / Unsafe Regex",
+      "description": "Detect AI-generated code with ReDoS-vulnerable regular expressions causing catastrophic backtracking",
+      "category": "code_safety",
+      "severity": "P2",
+      "action": "warn",
+      "applicable_stages": [
+        "output"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "\\([^()]+\\+\\)\\+",
+            "confidence": 0.6
+          },
+          {
+            "type": "regex",
+            "value": "\\([^()]+\\+\\)\\*",
+            "confidence": 0.6
+          },
+          {
+            "type": "regex",
+            "value": "\\([^()]+\\*\\)\\+",
+            "confidence": 0.6
+          },
+          {
+            "type": "regex",
+            "value": "\\([^()]+\\*\\)\\*",
+            "confidence": 0.6
+          }
+        ],
+        "languages": [
+          "python",
+          "javascript",
+          "typescript",
+          "java",
+          "go",
+          "rust",
+          "ruby",
+          "php",
+          "cpp",
+          "csharp"
+        ]
+      },
+      "config": {
+        "max_matches": 5,
+        "scopes": [
+          "output"
+        ]
+      }
+    },
+    {
+      "id": "O-17",
+      "name": "CSRF / XSS in Generated Frontend",
+      "description": "Detect AI-generated frontend code with CSRF/XSS vulnerabilities",
+      "category": "code_safety",
+      "severity": "P1",
+      "action": "warn",
+      "applicable_stages": [
+        "output"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "innerHTML\\s*=\\s*[A-Za-z_]\\w*\\s*[+;]",
+            "confidence": 0.65
+          },
+          {
+            "type": "regex",
+            "value": "outerHTML\\s*=\\s*[A-Za-z_]",
+            "confidence": 0.6
+          },
+          {
+            "type": "regex",
+            "value": "document\\.write\\s*\\(\\s*[A-Za-z_]",
+            "confidence": 0.6
+          },
+          {
+            "type": "regex",
+            "value": "dangerouslySetInnerHTML\\s*=\\s*\\{\\s*__html",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "v-html\\s*=\\s*[\"']\\s*[A-Za-z_]",
+            "confidence": 0.65
+          },
+          {
+            "type": "regex",
+            "value": "href\\s*=\\s*[\"'][\\s]*javascript:",
+            "confidence": 0.8
+          },
+          {
+            "type": "regex",
+            "value": "window\\.location\\s*=\\s*\\w+\\b(?:input|user|param|query|data)",
+            "confidence": 0.6
+          }
+        ],
+        "languages": [
+          "javascript",
+          "typescript",
+          "php"
+        ]
+      },
+      "config": {
+        "max_matches": 10,
+        "scopes": [
+          "output"
+        ]
+      }
+    },
+    {
+      "id": "O-18",
+      "name": "Sensitive Info Leak in Output",
+      "description": "Detect AI output containing credentials. Reuses I-01~I-10 detection patterns in output direction",
+      "category": "credentials_keys",
+      "severity": "P0",
+      "action": "block",
+      "applicable_stages": [
+        "output"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "gh[opsu]_[A-Za-z0-9_]{36,}",
+            "confidence": 0.95
+          },
+          {
+            "type": "regex",
+            "value": "sk-proj-[A-Za-z0-9]{20}T3BlbkFJ[A-Za-z0-9]{20,}",
+            "confidence": 0.98
+          },
+          {
+            "type": "regex",
+            "value": "sk-ant-api03-[A-Za-z0-9_-]{40,}",
+            "confidence": 0.98
+          },
+          {
+            "type": "regex",
+            "value": "(?:A3T[A-Z0-9]|AKIA|ASIA|ABIA|ACCA)[A-Z0-9]{16}",
+            "confidence": 0.95
+          },
+          {
+            "type": "regex",
+            "value": "sk_live_[A-Za-z0-9]{20,}",
+            "confidence": 0.95
+          },
+          {
+            "type": "regex",
+            "value": "(?:password|passwd|pwd|secret|api[_-]?key)\\s*[:=]\\s*[\"']?[A-Za-z0-9_@#$%^&+=!]{8,}",
+            "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "-----BEGIN (?:RSA |OPENSSH |DSA |EC |Ed25519 |PGP )?PRIVATE KEY-----",
+            "confidence": 0.95
+          },
+          {
+            "type": "regex",
+            "value": "eyJ[A-Za-z0-9_-]{10,}\\.[A-Za-z0-9_-]{10,}\\.[A-Za-z0-9_-]{10,}",
+            "confidence": 0.9
+          },
+          {
+            "type": "regex",
+            "value": "(?:mysql|postgresql|mongodb|oracle|sqlserver|redis)://[A-Za-z0-9_%]+:[^@\\s]+@",
+            "confidence": 0.5
+          },
+          {
+            "type": "entropy",
+            "value": "",
+            "confidence": 4.5,
+            "min_length": 20
+          }
+        ]
+      },
+      "config": {
+        "max_matches": 20,
+        "scopes": [
+          "output"
+        ]
+      }
+    },
+    {
+      "id": "O-19",
+      "name": "Hardcoded Cryptographic Keys",
+      "description": "Detect AI output code with hardcoded cryptographic keys",
+      "category": "credentials_keys",
+      "severity": "P1",
+      "action": "warn",
+      "applicable_stages": [
+        "output"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "(?:aes_key|aes\\s*key|aes-?key|secret_key|SECRET_KEY)\\s*[:=]\\s*[\"']?b?[\"']?[A-Za-z0-9+/=]{16,}",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "(?:jwt_secret|jwt\\s*secret|JWT_SECRET|signing_secret|signing\\s*key)\\s*[:=]\\s*[\"'][A-Za-z0-9_!@#$%^&*()-=+]{8,}[\"']",
+            "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "-----BEGIN CERTIFICATE-----\\s*\\S+",
+            "confidence": 0.95
+          },
+          {
+            "type": "regex",
+            "value": "key\\s*=\\s*b[\"']\\\\x[A-Fa-f0-9]{2}",
+            "confidence": 0.6
+          }
+        ]
+      },
+      "config": {
+        "max_matches": 10,
+        "scopes": [
+          "output"
+        ]
+      }
+    },
+    {
+      "id": "O-20",
+      "name": "Hardcoded Test / Dummy Credentials",
+      "description": "Detect test/demo credentials that may be used in production",
+      "category": "credentials_keys",
+      "severity": "P2",
+      "action": "warn",
+      "applicable_stages": [
+        "output"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "[\"']password123[\"']",
+            "confidence": 0.8
+          },
+          {
+            "type": "regex",
+            "value": "[\"']admin123[\"']",
+            "confidence": 0.8
+          },
+          {
+            "type": "regex",
+            "value": "[\"']test123[\"']",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "[\"']P@ssw0rd[\"']",
+            "confidence": 0.8
+          },
+          {
+            "type": "regex",
+            "value": "[\"']Test@123[\"']",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "[\"']root[\"']\\s*[:=]\\s*[\"']root[\"']",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "[\"']admin[\"']\\s*[:=]\\s*[\"']admin[\"']",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "password\\s*(?::|=)\\s*[\"']changeme[\"']",
+            "confidence": 0.7
+          }
+        ]
+      },
+      "config": {
+        "max_matches": 10,
+        "scopes": [
+          "output"
+        ]
+      }
+    },
+    {
+      "id": "O-21",
+      "name": "Copyrighted Code / License Notice",
+      "description": "Detect AI output containing licence/copyright notices",
+      "category": "credentials_keys",
+      "severity": "P1",
+      "action": "warn",
+      "applicable_stages": [
+        "output"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "Copyright\\s+(?:\\(c\\)|©)?\\s*\\d{4}",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "GNU\\s+(?:General\\s+)?(?:Public|Lesser|Affero)\\s+(?:License|General)",
+            "confidence": 0.8
+          },
+          {
+            "type": "regex",
+            "value": "(?:GPL|AGPL|LGPL)[-v]?(?:2|3|2\\.0|3\\.0)?\\b",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "MIT\\s+License\\b",
+            "confidence": 0.6
+          },
+          {
+            "type": "regex",
+            "value": "Apache\\s+License\\s+2\\.0",
+            "confidence": 0.6
+          },
+          {
+            "type": "regex",
+            "value": "BSD\\s+(?:2|3|Two|Three)[-\\s]Clause",
+            "confidence": 0.6
+          },
+          {
+            "type": "regex",
+            "value": "Mozilla\\s+Public\\s+License|MPL[-\\s]?(?:1\\.1|2\\.0)?",
+            "confidence": 0.6
+          },
+          {
+            "type": "regex",
+            "value": "Creative\\s+Commons\\s+(?:Attribution|CC|BY)",
+            "confidence": 0.6
+          }
+        ]
+      },
+      "config": {
+        "max_matches": 10,
+        "scopes": [
+          "output"
+        ]
+      }
+    },
+    {
+      "id": "O-22",
+      "name": "Internal Secret Leak",
+      "description": "Detect AI output containing internal/confidential markers indicating training data leakage",
+      "category": "credentials_keys",
+      "severity": "P0",
+      "action": "warn",
+      "applicable_stages": [
+        "output"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "\\bCONFIDENTIAL\\b|\\bconfidential\\b",
+            "confidence": 0.6
+          },
+          {
+            "type": "regex",
+            "value": "\\b(?:internal\\s+(?:use\\s+)?only|INTERNAL\\s+ONLY)\\b",
+            "confidence": 0.6
+          },
+          {
+            "type": "regex",
+            "value": "\\bproprietary\\b",
+            "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "\\btrade\\s+secret\\b",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "\\bdo\\s+not\\s+distribute\\b",
+            "confidence": 0.6
+          },
+          {
+            "type": "regex",
+            "value": "\\bclassified\\b",
+            "confidence": 0.6
+          },
+          {
+            "type": "regex",
+            "value": "\\bstrictly\\s+private\\b",
+            "confidence": 0.6
+          },
+          {
+            "type": "keyword",
+            "value": "DO_NOT_DISTRIBUTE",
+            "confidence": 0.7
+          }
+        ]
+      },
+      "config": {
+        "max_matches": 10,
+        "scopes": [
+          "output"
+        ],
+        "admin_alert": true
+      }
+    },
+    {
+      "id": "O-23",
+      "name": "Production Dangerous Config",
+      "description": "Detect AI output with dangerous production configuration settings",
+      "category": "security_config",
+      "severity": "P1",
+      "action": "warn",
+      "applicable_stages": [
+        "output"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "(?:DEBUG|FLASK_DEBUG|DJANGO_DEBUG)\\s*[:=]\\s*(?:True|true|'True'|\\\"True\\\"|1)",
+            "confidence": 0.75
+          },
+          {
+            "type": "regex",
+            "value": "ALLOWED_HOSTS\\s*[:=]\\s*\\[\\s*[\"']\\*[\"']\\s*\\]",
+            "confidence": 0.85
+          },
+          {
+            "type": "regex",
+            "value": "CORS_ORIGIN_ALLOW_ALL\\s*[:=]\\s*(?:True|true)",
+            "confidence": 0.8
+          },
+          {
+            "type": "regex",
+            "value": "SECRET_KEY\\s*(?::|=)\\s*[\"']\\s*(?:password|secret|123|test|changeme|your\\s*secret|your\\s*key)[\"']",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "SESSION_COOKIE_SECURE\\s*[:=]\\s*(?:False|false)",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "SESSION_COOKIE_HTTPONLY\\s*[:=]\\s*(?:False|false)",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "CSRF_COOKIE_SECURE\\s*[:=]\\s*(?:False|false)",
+            "confidence": 0.7
+          }
+        ]
+      },
+      "config": {
+        "max_matches": 10,
+        "scopes": [
+          "output"
+        ]
+      }
+    },
+    {
+      "id": "O-24",
+      "name": "Logging Sensitive Info",
+      "description": "Detect AI output code logging sensitive information",
+      "category": "security_config",
+      "severity": "P1",
+      "action": "warn",
+      "applicable_stages": [
+        "output"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "(?:log|logging|logger)\\.(?:info|debug|warning|error|critical|log)\\s*\\([^)]*\\b(?:password|token|api_key|secret|credential|authorization|jwt|private_key|access_key|connection_string|certificate)\\b",
+            "confidence": 0.75
+          },
+          {
+            "type": "regex",
+            "value": "\\bprint\\s*\\([^)]*\\b(?:password|token|api_key|secret|credential)\\b",
+            "confidence": 0.65
+          },
+          {
+            "type": "regex",
+            "value": "console\\.(?:log|info|warn|error|debug)\\s*\\([^)]*\\b(?:password|token|api[_-]?key|secret|credential|authorization|jwt)\\b",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "fmt\\.(?:Println|Printf|Print|Sprintf)\\s*\\([^)]*\\b(?:password|token|secret|key|credential)\\b",
+            "confidence": 0.65
+          }
+        ]
+      },
+      "config": {
+        "max_matches": 10,
+        "scopes": [
+          "output"
+        ]
+      }
+    },
+    {
+      "id": "O-25",
+      "name": "Hardcoded Internal / Private IP",
+      "description": "Detect AI output code with hardcoded private IP addresses",
+      "category": "security_config",
+      "severity": "P2",
+      "action": "warn",
+      "applicable_stages": [
+        "output"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "\\b10\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\b",
+            "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "\\b172\\.(?:1[6-9]|2\\d|3[01])\\.\\d{1,3}\\.\\d{1,3}\\b",
+            "confidence": 0.6
+          },
+          {
+            "type": "regex",
+            "value": "\\b192\\.168\\.\\d{1,3}\\.\\d{1,3}\\b",
+            "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "\\b127\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\b",
+            "confidence": 0.5
+          }
+        ]
+      },
+      "config": {
+        "max_matches": 30,
+        "scopes": [
+          "output"
+        ]
+      }
+    },
+    {
+      "id": "O-26",
+      "name": "Unsafe File Permissions",
+      "description": "Detect AI-generated code with unsafe file permissions",
+      "category": "security_config",
+      "severity": "P2",
+      "action": "warn",
+      "applicable_stages": [
+        "output"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "chmod\\s+777|chmod\\s+0777|chmod\\s+0o777",
+            "confidence": 0.85
+          },
+          {
+            "type": "regex",
+            "value": "os\\.chmod\\s*\\([^,]+,\\s*0o?777",
+            "confidence": 0.8
+          },
+          {
+            "type": "regex",
+            "value": "FileMode\\s*[:=]\\s*0*777",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "Set(?:AccessRule|Permission)\\s*\\([^)]*(?:Everyone|World|All)[^)]*(?:Full|All)",
+            "confidence": 0.7
+          }
+        ]
+      },
+      "config": {
+        "max_matches": 10,
+        "scopes": [
+          "output"
+        ]
+      }
+    },
+    {
+      "id": "O-27",
+      "name": "Race Condition / TOCTOU",
+      "description": "Detect AI-generated code with race condition / TOCTOU patterns",
+      "category": "security_design",
+      "severity": "P2",
+      "action": "warn",
+      "applicable_stages": [
+        "output"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "os\\.path\\.(?:exists|isfile|isdir)\\s*\\([^)]*\\)\\s*:?\\s*\\n\\s*(?:return\\s+)?(?:open|read|write|delete|remove|unlink|rename|chmod|chown)\\s*\\(",
+            "confidence": 0.65
+          },
+          {
+            "type": "regex",
+            "value": "File\\.Exists\\s*\\([^)]*\\)[^}]*File\\.(?:Open|Read|Write|Delete)",
+            "confidence": 0.6
+          },
+          {
+            "type": "regex",
+            "value": "if\\s+exists\\s*\\([^)]*\\)\\s*\\{",
+            "confidence": 0.4
+          }
+        ]
+      },
+      "config": {
+        "max_matches": 10,
+        "scopes": [
+          "output"
+        ]
+      }
+    },
+    {
+      "id": "O-28",
+      "name": "Memory Safety Issues",
+      "description": "Detect AI-generated code with memory safety issues: gets/strcpy/unsafe/ctypes",
+      "category": "security_design",
+      "severity": "P2",
+      "action": "warn",
+      "applicable_stages": [
+        "output"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "\\bgets\\s*\\(\\s*\\w+\\s*\\)",
+            "confidence": 0.85
+          },
+          {
+            "type": "regex",
+            "value": "\\bstrcpy\\s*\\([^)]*\\)",
+            "confidence": 0.75
+          },
+          {
+            "type": "regex",
+            "value": "\\bsprintf\\s*\\(\\s*\\w+\\s*,\\s*[\\\"']",
+            "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "unsafe\\s*\\{[^}]*\\*\\s*(?:const\\s+)?(?:mut\\s+)?\\w+\\s*=\\s*&?\\*",
+            "confidence": 0.6
+          },
+          {
+            "type": "regex",
+            "value": "std::mem::transmute\\s*<",
+            "confidence": 0.65
+          },
+          {
+            "type": "regex",
+            "value": "ctypes\\.(?:CDLL|CDLL\\.LoadLibrary|windll|oledll)\\s*\\(\\s*[\\\"']",
+            "confidence": 0.5
+          }
+        ],
+        "languages": [
+          "cpp",
+          "rust"
+        ]
+      },
+      "config": {
+        "max_matches": 10,
+        "scopes": [
+          "output"
+        ]
+      }
+    },
+    {
+      "id": "O-29",
+      "name": "Improper Error Handling Leaking Internals",
+      "description": "Detect AI output code with error handling leaking internal information",
+      "category": "security_design",
+      "severity": "P2",
+      "action": "warn",
+      "applicable_stages": [
+        "output"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "return\\s+(?:str\\s*\\(\\s*e\\s*\\)|f\\\"[^\\\"]*\\{e\\})",
+            "confidence": 0.65
+          },
+          {
+            "type": "regex",
+            "value": "\\berr\\.stack\\b",
+            "confidence": 0.6
+          },
+          {
+            "type": "regex",
+            "value": "traceback\\.(?:print_exc|format_exc)\\s*\\(\\s*\\)",
+            "confidence": 0.65
+          }
+        ]
+      },
+      "config": {
+        "max_matches": 10,
+        "scopes": [
+          "output"
+        ]
+      }
+    },
+    {
+      "id": "O-30",
+      "name": "Insecure Protocol / Default Config",
+      "description": "Detect AI output code using insecure protocols or default configs",
+      "category": "security_design",
+      "severity": "P2",
+      "action": "warn",
+      "applicable_stages": [
+        "output"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "ftp://(?!sftp|ftps)",
+            "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "\\btelnet\\b",
+            "confidence": 0.6
+          },
+          {
+            "type": "regex",
+            "value": "SSLv3|TLSv[12]\\.0|TLSv1_0",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "security\\s*:\\s*(?:false|disabled|off|none)",
+            "confidence": 0.4
+          }
+        ]
+      },
+      "config": {
+        "max_matches": 10,
+        "scopes": [
+          "output"
+        ]
+      }
+    },
+    {
+      "id": "O-31",
+      "name": "Obfuscated / Suspicious Code",
+      "description": "Detect AI output code with obfuscated/suspicious patterns",
+      "category": "security_design",
+      "severity": "P1",
+      "action": "warn",
+      "applicable_stages": [
+        "output"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "eval\\s*\\(\\s*(?:base64_decode|btoa|atob|decodeURI|unescape|fromCharCode)\\s*\\(",
+            "confidence": 0.8
+          },
+          {
+            "type": "regex",
+            "value": "base64_decode\\([^)]*\\)\\.(?:eval|exec|assert|system)",
+            "confidence": 0.75
+          },
+          {
+            "type": "regex",
+            "value": "(?:new\\s+Date\\(\\)\\.get(?:Time|Seconds|Minutes|Hours)|Date\\.now\\(\\))\\s*[><=!]=",
+            "confidence": 0.3
+          }
+        ]
+      },
+      "config": {
+        "max_matches": 10,
+        "scopes": [
+          "output"
+        ],
+        "admin_alert": true
+      }
+    },
+    {
+      "id": "O-32",
+      "name": "JWT Security Issues",
+      "description": "Detect AI-generated JWT code with security flaws",
+      "category": "security_design",
+      "severity": "P1",
+      "action": "warn",
+      "applicable_stages": [
+        "output"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "jwt\\.(?:sign|encode)\\s*\\([^)]*[\"'][A-Za-z0-9_!@#$%^&*()=+\\-]{4,20}[\"']",
+            "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "algorithm\\s*[:=]\\s*[\"']none[\"']",
+            "confidence": 0.85
+          },
+          {
+            "type": "regex",
+            "value": "\\balg\\s*[:=]\\s*[\"']none[\"']",
+            "confidence": 0.85
+          },
+          {
+            "type": "regex",
+            "value": "localStorage\\.setItem\\s*\\([^)]*token[^)]*\\)",
+            "confidence": 0.6
+          },
+          {
+            "type": "regex",
+            "value": "jwt\\.(?:sign|encode)\\s*\\([^)]*[\"']secret[\"']",
+            "confidence": 0.7
+          }
+        ]
+      },
+      "config": {
+        "max_matches": 10,
+        "scopes": [
+          "output"
+        ]
+      }
+    },
+    {
+      "id": "O-33",
+      "name": "Dependency Confusion",
+      "description": "Detect AI output dependency declarations that may reference non-existent public packages",
+      "category": "supply_chain",
+      "severity": "P0",
+      "action": "warn",
+      "applicable_stages": [
+        "output"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "\\b(?:pip|pip3)\\s+install\\s+(?:--index-url\\s+)?(?:git\\+|http)",
+            "confidence": 0.6
+          },
+          {
+            "type": "regex",
+            "value": "\\\"dependencies\\\"\\s*:\\s*\\{[^}]*\\\"@[a-z]+-[a-z]+\\\"\\s*:",
+            "confidence": 0.4
+          }
+        ]
+      },
+      "config": {
+        "max_matches": 10,
+        "scopes": [
+          "output"
+        ]
+      }
+    },
+    {
+      "id": "O-34",
+      "name": "Known CVE Dependency",
+      "description": "Detect AI output dependency versions with known CVEs",
+      "category": "supply_chain",
+      "severity": "P1",
+      "action": "warn",
+      "applicable_stages": [
+        "output"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "[\"']lodash[\"']\\s*:\\s*[\"'][~^]?(?:4\\.(?:1[0-6]|0)\\..*)",
+            "confidence": 0.6
+          },
+          {
+            "type": "regex",
+            "value": "\\\"axios\\\"\\s*:\\s*[\"'][~^]?0\\.",
+            "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "log4j.*2\\.(?:0|1[0-6])\\.",
+            "confidence": 0.6
+          }
+        ]
+      },
+      "config": {
+        "max_matches": 10,
+        "scopes": [
+          "output"
+        ]
+      }
+    },
+    {
+      "id": "O-35",
+      "name": "Phishing / Suspicious Link",
+      "description": "Detect AI output URLs pointing to non-whitelisted domains with phishing risk",
+      "category": "supply_chain",
+      "severity": "P1",
+      "action": "warn",
+      "applicable_stages": [
+        "output"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "https?://[a-zA-Z0-9\\-]{1,63}\\.(?:xyz|top|club|online|site|live|work|info|biz|gq|ml|cf|ga|tk)\\/",
+            "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "https?://(?:bit\\.ly|tinyurl\\.com|shorturl\\.at|goo\\.gl|ow\\.ly|is\\.gd)\\/",
+            "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "https?://[^\\s\"']*(?:login|signin|verify|authenticate|account|secure|banking|wallet)[^\\s\"']*\\.(?:com|org|net)",
+            "confidence": 0.4
+          }
+        ]
+      },
+      "config": {
+        "max_matches": 20,
+        "scopes": [
+          "output"
+        ]
+      }
+    },
+    {
+      "id": "O-36",
+      "name": "Unpinned Dependency Versions",
+      "description": "Detect AI output dependency declarations with unpinned versions",
+      "category": "supply_chain",
+      "severity": "P2",
+      "action": "warn",
+      "applicable_stages": [
+        "output"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "[\"'][A-Za-z0-9_.-]+[\"']\\s*:\\s*[\"'][\\^~]\\d+\\.",
+            "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "\\bLATEST|SNAPSHOT|RELEASE\\b",
+            "confidence": 0.4
+          }
+        ]
+      },
+      "config": {
+        "max_matches": 20,
+        "scopes": [
+          "output"
+        ]
+      }
+    },
+    {
+      "id": "O-37",
+      "name": "Global Dependency / Geo-Restricted Package",
+      "description": "Detect AI output referencing geo-restricted or region-specific mirror sources",
+      "category": "supply_chain",
+      "severity": "P2",
+      "action": "warn",
+      "applicable_stages": [
+        "output"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "(?:pypi\\.douban|mirrors\\.aliyun|mirrors\\.tuna\\.tsinghua|mirrors\\.163|mirrors\\.ustc|mirrors\\.huaweicloud)\\.(?:com|cn|org)",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "\\-i\\s+https?://[^\\s]*\\.(?:edu\\.cn|ac\\.cn)",
+            "confidence": 0.5
+          }
+        ]
+      },
+      "config": {
+        "max_matches": 10,
+        "scopes": [
+          "output"
+        ]
+      }
+    },
+    {
+      "id": "O-38",
+      "name": "Harmful / Illegal Content Generation",
+      "description": "Detect AI output containing harmful or illegal content",
+      "category": "content_safety",
+      "severity": "P0",
+      "action": "block",
+      "applicable_stages": [
+        "output"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "(?:how\\s+to\\s+(?:make|build|create|manufacture|synthesize)\\s+(?:bomb|explosive|weapon|drug|narcotic|poison|toxin|chemical\\s+weapon|bioweapon))",
+            "confidence": 0.75
+          },
+          {
+            "type": "regex",
+            "value": "(?:how\\s+to\\s+(?:commit|perform|carry\\s+out)\\s+(?:suicide|self-harm|self\\s+injury))",
+            "confidence": 0.8
+          },
+          {
+            "type": "regex",
+            "value": "\\b(?:child\\s*(?:porn|exploit|abuse|traffick|sexualize)|CSAM)\\b",
+            "confidence": 0.9
+          },
+          {
+            "type": "regex",
+            "value": "\\b(?:make\\s+(?:a\\s+)?(?:bomb|pipe\\s+bomb|IED|explosive\\s+device|nerve\\s+gas|sarin|mustard\\s+gas))\\b",
+            "confidence": 0.8
+          }
+        ]
+      },
+      "config": {
+        "max_matches": 10,
+        "scopes": [
+          "output"
+        ],
+        "admin_alert": true
+      }
+    },
+    {
+      "id": "O-39",
+      "name": "Weaponized / Malicious Code Generation",
+      "description": "Detect AI output containing complete malicious/weaponised code",
+      "category": "content_safety",
+      "severity": "P0",
+      "action": "block",
+      "applicable_stages": [
+        "output"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "\\bransomware\\b",
+            "confidence": 0.8
+          },
+          {
+            "type": "regex",
+            "value": "\\bC2\\s*(?:server|framework|channel|communication|command\\s+and\\s+control)",
+            "confidence": 0.4
+          },
+          {
+            "type": "regex",
+            "value": "\\b(?:keylogger|keystroke\\s+logger)",
+            "confidence": 0.85
+          },
+          {
+            "type": "regex",
+            "value": "\\b(?:cryptominer|cryptojack|miner|monero\\s+min)",
+            "confidence": 0.6
+          },
+          {
+            "type": "regex",
+            "value": "\\b(?:backdoor|remote\\s+access\\s+trojan|RAT\\s+server)",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "\\b(?:DDoS|botnet|flooder|stresser|boote?r)",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "\\b(?:bootkit|rootkit|boot\\s+kitt?)",
+            "confidence": 0.7
+          }
+        ]
+      },
+      "config": {
+        "max_matches": 10,
+        "scopes": [
+          "output"
+        ],
+        "admin_alert": true
+      }
+    },
+    {
+      "id": "O-40",
+      "name": "Training Data Extraction / Memorized Content",
+      "description": "Detect AI output verbatim or highly similar to training data",
+      "category": "content_safety",
+      "severity": "P0",
+      "action": "warn",
+      "applicable_stages": [
+        "output"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "RFC\\s+\\d{3,4}\\s+(?:Internet\\s+Engineering\\s+Task\\s+Force|Network\\s+Working\\s+Group)",
+            "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "Permission\\s+is\\s+hereby\\s+granted,\\s+free\\s+of\\s+charge,\\s+to\\s+any\\s+person\\s+obtaining\\s+a\\s+copy",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "GNU\\s+(?:LESSER|AFFERO)?\\s*GENERAL\\s+PUBLIC\\s+LICENSE",
+            "confidence": 0.7
+          }
+        ]
+      },
+      "config": {
+        "max_matches": 10,
+        "scopes": [
+          "output"
+        ]
+      }
+    },
+    {
+      "id": "O-41",
+      "name": "PII / Personal Data in Output",
+      "description": "Detect AI output containing real personal identifiable information. Reuses I-11~I-20 patterns for output direction",
+      "category": "content_safety",
+      "severity": "P1",
+      "action": "redact",
+      "applicable_stages": [
+        "output"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "(?:\\+?86)?1[3-9]\\d{9}\\b",
+            "confidence": 0.8
+          },
+          {
+            "type": "regex",
+            "value": "\\b[1-9]\\d{5}(?:19|20)\\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\\d|3[01])\\d{3}[\\dXx]\\b",
+            "confidence": 0.85
+          },
+          {
+            "type": "regex",
+            "value": "\\b[A-Za-z0-9._%+\\-]+@[A-Za-z0-9.\\-]+\\.[A-Za-z]{2,}\\b",
+            "confidence": 0.9
+          },
+          {
+            "type": "regex",
+            "value": "\\b\\d{3}-\\d{2}-\\d{4}\\b",
+            "confidence": 0.8
+          },
+          {
+            "type": "regex",
+            "value": "\\b4\\d{3}[\\s\\-]?\\d{4}[\\s\\-]?\\d{4}[\\s\\-]?\\d{4}\\b",
+            "confidence": 0.7
+          }
+        ]
+      },
+      "config": {
+        "max_matches": 50,
+        "scopes": [
+          "output"
+        ],
+        "redact_template": "[PII_REDACTED]"
+      }
+    },
+    {
+      "id": "O-42",
+      "name": "Hallucinated Authority / Fake Reference",
+      "description": "Detect AI output containing possible fake references",
+      "category": "content_safety",
+      "severity": "P2",
+      "action": "warn",
+      "applicable_stages": [
+        "output"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "CVE-20(?:2[5-9]|3[0-9])-\\d{4,}",
+            "confidence": 0.3
+          },
+          {
+            "type": "regex",
+            "value": "RFC\\s+(?:9\\d{3}|[12]\\d{4}|[3-9]\\d{3,})",
+            "confidence": 0.3
+          }
+        ]
+      },
+      "config": {
+        "max_matches": 10,
+        "scopes": [
+          "output"
+        ]
+      }
+    },
+    {
+      "id": "O-43",
+      "name": "Export Control / Cryptographic Export",
+      "description": "Detect AI output code containing export-restricted strong encryption without compliance declaration",
+      "category": "compliance_legal",
+      "severity": "P2",
+      "action": "warn",
+      "applicable_stages": [
+        "output"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "AES[_\\-\\s]?(?:256|192)[_\\-\\s]?(?:GCM|CBC|CTR|CFB|OFB)",
+            "confidence": 0.4
+          },
+          {
+            "type": "regex",
+            "value": "RSA\\s*\\(\\s*2048|RSA\\.generate\\s*\\(\\s*2048",
+            "confidence": 0.4
+          },
+          {
+            "type": "regex",
+            "value": "ChaCha20[_\\-]?Poly1305",
+            "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "EC[Dd]S[Aa]\\s*(?:with|\\()\\s*(?:P-256|P-384|P-521|secp256|secp384|secp521)",
+            "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "X25519|Ed25519|X448|Ed448",
+            "confidence": 0.4
+          }
+        ]
+      },
+      "config": {
+        "max_matches": 10,
+        "scopes": [
+          "output"
+        ]
+      }
+    },
+    {
+      "id": "O-44",
+      "name": "Cross-Border Data Transfer Risk",
+      "description": "Detect AI output code/config with cross-border data transfer compliance risk",
+      "category": "compliance_legal",
+      "severity": "P1",
+      "action": "warn",
+      "applicable_stages": [
+        "output"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "region\\s*[:=]\\s*[\"'](?:us-east|us-west|eu-west|eu-central|ap-southeast|sa-east|ca-central)[\"']",
+            "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "\\bcross.?border|跨境|transborder|data.?sovereign",
+            "confidence": 0.3
+          }
+        ]
+      },
+      "config": {
+        "max_matches": 10,
+        "scopes": [
+          "output"
+        ]
+      }
+    },
+    {
+      "id": "O-45",
+      "name": "Content Moderation / Filter Missing",
+      "description": "Detect AI-generated social/UGC platform code missing illegal content filtering",
+      "category": "compliance_legal",
+      "severity": "P1",
+      "action": "warn",
+      "applicable_stages": [
+        "output"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "req\\.body\\.(?:content|text|message|comment|post|review)",
+            "confidence": 0.3
+          },
+          {
+            "type": "keyword",
+            "value": "content moderation",
+            "confidence": 0.2
+          }
+        ]
+      },
+      "config": {
+        "max_matches": 10,
+        "scopes": [
+          "output"
+        ]
+      }
+    },
+    {
+      "id": "O-46",
+      "name": "GDPR / Data Protection Audit Missing",
+      "description": "Detect AI-generated code processing user data without data protection audit mechanisms",
+      "category": "compliance_legal",
+      "severity": "P2",
+      "action": "warn",
+      "applicable_stages": [
+        "output"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "keyword",
+            "value": "right to erasure",
+            "confidence": 0.5
+          },
+          {
+            "type": "keyword",
+            "value": "right to be forgotten",
+            "confidence": 0.5
+          },
+          {
+            "type": "keyword",
+            "value": "data portability",
+            "confidence": 0.4
+          },
+          {
+            "type": "keyword",
+            "value": "DSAR",
+            "confidence": 0.5
+          },
+          {
+            "type": "keyword",
+            "value": "subject access request",
+            "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "audit_log|audit\\s*log|auditing|data_access_log|privacy_log",
+            "confidence": 0.2
+          }
+        ]
+      },
+      "config": {
+        "max_matches": 10,
+        "scopes": [
+          "output"
+        ]
+      }
+    },
+    {
+      "id": "O-47",
+      "name": "Weak Crypto / Deprecated Algorithm",
+      "description": "Detect AI output code using deprecated weak cryptographic algorithms",
+      "category": "compliance_legal",
+      "severity": "P1",
+      "action": "warn",
+      "applicable_stages": [
+        "output"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "\\bMD5\\b",
+            "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "\\bSHA[\\-]?1\\b",
+            "confidence": 0.6
+          },
+          {
+            "type": "regex",
+            "value": "\\bsha1\\b",
+            "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "\\bDES\\b(?![_\\-\\s])",
+            "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "\\b3DES\\b|\\bDESede\\b|\\bTripleDES\\b",
+            "confidence": 0.6
+          },
+          {
+            "type": "regex",
+            "value": "\\bRC4\\b|\\bARCFOUR\\b",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "AES/(?:ECB)|AES\\.ECB|'ECB'|\\\"ECB\\\"",
+            "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "RSA\\s*\\(\\s*(?:512|1024)\\s*\\)",
+            "confidence": 0.6
+          },
+          {
+            "type": "regex",
+            "value": "PBKDF2.*(?:iterations?|rounds)\\s*[=<]\\s*[0-5]\\d{4,5}\\b",
+            "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "bcrypt\\.gensalt\\s*\\(\\s*\\d\\b",
+            "confidence": 0.4
+          }
+        ]
+      },
+      "config": {
+        "max_matches": 10,
+        "scopes": [
+          "output"
+        ]
+      }
+    },
+    {
+      "id": "O-48",
+      "name": "Accessibility / a11y Violation",
+      "description": "Detect AI-generated frontend code with web accessibility compliance issues",
+      "category": "i18n_engineering",
+      "severity": "P2",
+      "action": "warn",
+      "applicable_stages": [
+        "output"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "<button[^>]*>\\s*<img[^>]*>\\s*</button>",
+            "confidence": 0.4
+          },
+          {
+            "type": "regex",
+            "value": "<div[^>]*onClick\\s*=",
+            "confidence": 0.4
+          },
+          {
+            "type": "keyword",
+            "value": "alt=\"\"",
+            "confidence": 0.3
+          }
+        ],
+        "languages": [
+          "javascript",
+          "typescript"
+        ]
+      },
+      "config": {
+        "max_matches": 10,
+        "scopes": [
+          "output"
+        ]
+      }
+    },
+    {
+      "id": "O-49",
+      "name": "Hardcoded Display String / i18n Missing",
+      "description": "Detect AI-generated frontend/backend code with hardcoded UI display strings without i18n",
+      "category": "i18n_engineering",
+      "severity": "P2",
+      "action": "warn",
+      "applicable_stages": [
+        "output"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "[\"'][一-鿿]{2,30}[\"']",
+            "confidence": 0.4
+          },
+          {
+            "type": "keyword",
+            "value": "t(",
+            "confidence": 0.2
+          },
+          {
+            "type": "keyword",
+            "value": "i18n",
+            "confidence": 0.2
+          }
+        ],
+        "languages": [
+          "python",
+          "javascript",
+          "typescript",
+          "java",
+          "go",
+          "ruby",
+          "php",
+          "csharp",
+          "swift",
+          "kotlin"
+        ]
+      },
+      "config": {
+        "max_matches": 20,
+        "scopes": [
+          "output"
+        ]
+      }
+    },
+    {
+      "id": "O-50",
+      "name": "Locale / Timezone / Currency Hardcode",
+      "description": "Detect AI-generated code with hardcoded locale/timezone/currency formatting",
+      "category": "i18n_engineering",
+      "severity": "P2",
+      "action": "warn",
+      "applicable_stages": [
+        "output"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "pytz\\.timezone\\s*\\(\\s*[\"']",
+            "confidence": 0.4
+          },
+          {
+            "type": "regex",
+            "value": "moment\\(\\)\\.tz\\s*\\(\\s*[\"']",
+            "confidence": 0.4
+          },
+          {
+            "type": "regex",
+            "value": "[\"']\\$[\"']\\s*\\+|[\"']¥[\"']\\s*\\+|[\"']€[\"']\\s*\\+",
+            "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "[\"']yyyy[-/]MM[-/]dd[\"']|[\"']dd[-/]MM[-/]yyyy[\"']",
+            "confidence": 0.5
+          }
+        ],
+        "languages": [
+          "python",
+          "javascript",
+          "typescript",
+          "java",
+          "go",
+          "ruby",
+          "php",
+          "csharp",
+          "swift",
+          "kotlin"
+        ]
+      },
+      "config": {
+        "max_matches": 10,
+        "scopes": [
+          "output"
+        ]
+      }
+    },
+    {
+      "id": "O-51",
+      "name": "Oversized Output",
+      "description": "Detect AI output exceeding 50,000 characters. May indicate repeated/nonsense content or training data batch output",
+      "category": "compliance_data_leak",
+      "severity": "P2",
+      "action": "warn",
+      "applicable_stages": [
+        "output"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": []
+      },
+      "config": {
+        "max_length": 50000,
+        "scopes": [
+          "output"
+        ],
+        "no_pattern_match": true,
+        "audit_log": true
+      }
+    }
+  ]
+}

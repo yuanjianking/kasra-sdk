@@ -1,0 +1,50 @@
+# Kasra L3 Rule Engine — Default Configuration
+engine:
+  max_concurrent_rules: 20
+  rule_timeout_seconds: 5.0
+  cache_compiled_patterns: true
+
+pipeline:
+  input:
+    enabled: true
+    preprocess: true
+    default_action: block
+  output:
+    enabled: true
+    stream_buffer_size: 4096
+    boundary_type: sentence
+    flush_timeout_ms: 500
+    retroactive_block_strategy: redact_and_notify
+    retain_full_content: true
+  batch:
+    enabled: true
+    max_file_size_mb: 10
+    exclude_patterns:
+      - "node_modules/**"
+      - ".git/**"
+      - "__pycache__/**"
+      - "vendor/**"
+      - "*.min.js"
+    parallel_files: 4
+  behavior:
+    enabled: true
+    session_history_ttl_hours: 24
+    baseline_days: 7
+    escalation_window_minutes: 60
+
+audit:
+  enabled: true
+  log_to_console: true
+  jsonl_path: kasra-audit.jsonl
+  max_queue_size: 10000
+  batch_write_interval_seconds: 2.0
+
+overrides:
+  severity: {}
+  action: {}
+  disabled_rules: []
+  enabled_only_rules: []
+
+plugins:
+  enabled: false
+  paths: []
