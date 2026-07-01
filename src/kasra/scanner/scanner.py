@@ -50,6 +50,66 @@ def _matches_glob(file_path: str, patterns: list[str]) -> bool:
     return False
 
 
+_SEMGREP_AVAILABLE: bool | None = None
+_SEMGREP_RUNNER: Any | None = None
+
+
+def _try_semgrep(content: str, rel_path: str, rule_id: str,
+                  matches: list[dict[str, Any]]) -> None:
+    """Optional Phase 0: run Semgrep AST matching if available.
+
+    Semgrep is an optional dependency.  If ``semgrep`` is on ``$PATH``
+    and *rule_id* has Semgrep patterns, this runs first and pushes
+    matches into the shared list (deduped by position).
+    """
+    global _SEMGREP_AVAILABLE, _SEMGREP_RUNNER
+
+    # One-time check: is semgrep installed?
+    if _SEMGREP_AVAILABLE is None:
+        try:
+            import subprocess
+            result = subprocess.run(["semgrep", "--version"],
+                                    capture_output=True, text=True, timeout=5)
+            _SEMGREP_AVAILABLE = result.returncode == 0
+        except Exception:
+            _SEMGREP_AVAILABLE = False
+
+    if not _SEMGREP_AVAILABLE:
+        return
+
+    # One-time import: load the adapter if semgrep is available
+    if _SEMGREP_RUNNER is None:
+        try:
+            from kasra.analyzers.semgrep_adapter import SemgrepRunner as SR, has_semgrep_patterns as HSM
+            _SEMGREP_RUNNER = (SR(), HSM)
+        except Exception:
+            _SEMGREP_AVAILABLE = False
+            return
+            return
+
+    runner, has_patterns = _SEMGREP_RUNNER
+    if not has_patterns(rule_id):
+        return
+
+    try:
+        findings = runner.run(rel_path, content, rule_id)
+        seen: set[tuple[int, int]] = set()
+        for f in findings:
+            pos = (f.line_number, f.column)
+            if pos in seen:
+                continue
+            seen.add(pos)
+            matches.append({
+                "start": max(0, f.line_number - 1),
+                "end": f.line_number,
+                "matched": f.matched_text[:200],
+                "confidence": f.confidence,
+                "pattern": f"semgrep/{rule_id}",
+            })
+    except Exception:
+        pass  # semgrep unavailable or error — fall through
+
+
 class CodeReviewScanner:
     """Scans code repositories for security vulnerabilities.
 
@@ -267,7 +327,8 @@ class CodeReviewScanner:
 
         matches: list[dict[str, Any]] = []
 
-        # ── Phase 1: check if this rule has a dedicated Python checker ──
+        # ── Phase 0: Semgrep AST-level matching (optional backend) ──
+        _try_semgrep(content, rel_path, rule_id, matches)
         CodeReviewScanner._init_code_checks()
         if rule_id in CodeReviewScanner._CODE_CHECKS:
             method_name, exts, min_conf, _ = CodeReviewScanner._CODE_CHECKS[rule_id]

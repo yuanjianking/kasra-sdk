@@ -40,6 +40,7 @@ from kasra.models.rule import PatternDefinition, RuleDefinition
 from kasra.matchers.base import PatternMatcher
 from kasra.analyzers.context import AnalysisContext, EvidenceItem, MatchContext
 from kasra.rules.checks import has_checker, get_checker
+from kasra.analyzers.semgrep_adapter import SemgrepRunner, has_semgrep_patterns
 
 
 # ---------------------------------------------------------------------------
@@ -88,6 +89,55 @@ class MatcherDispatcher:
 # ---------------------------------------------------------------------------
 # Rule runner
 # ---------------------------------------------------------------------------
+
+_semgrep_runner: SemgrepRunner | None = None
+
+
+def _match_via_semgrep(
+    content: str,
+    rule_id: str,
+    all_matches: list[MatchResult],
+    evidence: list[EvidenceItem],
+) -> None:
+    """Run *rule_id* against *content* via Semgrep (if available).
+
+    Matches are prepended to *all_matches* with evidence chain entries.
+    """
+    global _semgrep_runner
+
+    if not has_semgrep_patterns(rule_id):
+        return
+
+    if _semgrep_runner is None:
+        _semgrep_runner = SemgrepRunner()
+    runner = _semgrep_runner
+
+    if not runner.available:
+        return
+
+    try:
+        findings = runner.run("<inline>", content, rule_id)
+        for f in findings:
+            span = MatchSpan(start=f.line_number, end=f.line_number, matched=f.matched_text[:200])
+            all_matches.append(MatchResult(
+                rule_id=rule_id,
+                pattern_index=0,
+                pattern_type="regex",
+                pattern_value=f"semgrep/{rule_id}",
+                confidence=f.confidence,
+                spans=[span],
+                matched_text=f.matched_text[:200],
+            ))
+            evidence.append(EvidenceItem(
+                rule_id=rule_id,
+                reason=f"Semgrep match: {f.matched_text[:80]}",
+                matching_text=f.matched_text[:200],
+                confidence=f.confidence,
+                source_layer="lexical",
+            ))
+    except Exception:
+        pass
+
 
 class RuleRunner:
     """Executes a single rule definition against content.
@@ -235,7 +285,10 @@ class RuleRunner:
                 except Exception:
                     pass
 
-            # Also run standard regex patterns (complements Python checkers)
+            # ── Semgrep AST matching (optional, preferred over regex) ──
+            _match_via_semgrep(content, rule.id, all_matches, evidence)
+
+            # Also run standard regex patterns (complements Python checkers / semgrep)
             pattern_results: list[list[MatchResult]] = []
             for idx, pattern in enumerate(rule.detection.patterns):
                 matches = self._dispatcher.match(

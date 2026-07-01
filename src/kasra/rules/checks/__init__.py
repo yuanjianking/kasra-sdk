@@ -3,7 +3,7 @@
 Each checker is a function ``(content: str) -> list[dict]`` that returns
 match dicts with keys ``start``, ``end``, ``matched``, ``confidence``, ``pattern``.
 
-These run inside ``RuleRunner.run_rule()`` **instead of** the regex/keyword
+These run inside ``RuleRunner.run_rule()`` **in addition to** the regex/keyword
 matchers when a rule has a Python checker registered.
 """
 
@@ -37,16 +37,19 @@ def has_checker(rule_id: str) -> bool:
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _match(content: str, pattern: str, confidence: float, tag: str) -> list[dict[str, Any]]:
-    """Run a regex and return match dicts."""
+def _match(content: str, pattern: str, base_confidence: float, tag: str) -> list[dict[str, Any]]:
+    """Run a regex and return match dicts with context-adjusted confidence."""
     results: list[dict[str, Any]] = []
     try:
         for m in re.finditer(pattern, content, re.MULTILINE):
+            adj = _adjust_confidence(content, m.start(), base_confidence)
+            if adj <= 0:
+                continue
             results.append({
                 "start": m.start(),
                 "end": m.end(),
                 "matched": m.group()[:200],
-                "confidence": confidence,
+                "confidence": adj,
                 "pattern": tag,
             })
     except re.error:
@@ -54,8 +57,42 @@ def _match(content: str, pattern: str, confidence: float, tag: str) -> list[dict
     return results
 
 
+def _adjust_confidence(content: str, pos: int, base: float) -> float:
+    """Adjust confidence up/down based on context around *pos*.
+
+    - Inside a comment → drop by 0.2 (likely safe example)
+    - Inside a test function → drop by 0.1 (test code)
+    - Inside an f-string/docstring → drop by 0.15 (example code)
+    - Has ``# nosemgrep`` or ``# skip`` nearby → drop to 0.0
+    - Variable name contains ``safe``/``example``/``sample`` nearby → drop by 0.1
+    """
+    window = content[max(0, pos - 200):pos + 100].lower()
+
+    # nosemgrep/skip → skip entirely
+    if re.search(r"#\s*(?:nosemgrep|skip|no.check|ignore)\b", window):
+        return 0.0
+
+    # Inside comment → likely illustrative
+    if re.search(r"#.*$|//.*$|/\*.*\*/$|<!--.*-->$", window, re.MULTILINE):
+        return max(base - 0.2, 0.1)
+
+    # Inside test
+    if re.search(r"(?:def test_|class Test|@pytest)", window):
+        return max(base - 0.1, 0.1)
+
+    # Example/sample code
+    if re.search(r"\b(?:example|sample|illustrative|demo)\b", window):
+        return max(base - 0.15, 0.1)
+
+    # Safe variable names
+    if re.search(r"\b(?:safe|harmless|benign|playground|mock)\b", window):
+        return max(base - 0.15, 0.1)
+
+    return base
+
+
 # ===================================================================
-# O-01 ~ O-17 checkers
+# O-01 ~ O-17 checkers — enhanced with context-aware confidence
 # ===================================================================
 
 @register("O-01")
@@ -72,10 +109,16 @@ def check_dangerous_function_call(content: str) -> list[dict[str, Any]]:
         (r"Process\.Start\s*\(", 0.85, "Process.Start"),
         (r"exec\.Command\s*\(", 0.85, "exec.Command"),
         (r"os\.StartProcess\s*\(", 0.7, "os.StartProcess"),
+        (r"syscall\.Exec\s*\(", 0.8, "syscall.Exec"),
         (r"(?:shell_exec|exec|system)\s*\(\s*\$", 0.7, "PHP exec"),
         (r"create_function\s*\(", 0.7, "PHP create_function"),
+        (r"popen\s*\(\s*\$", 0.7, "PHP popen"),
         (r"std::process::Command", 0.85, "Rust Command"),
+        (r"Command::new\s*\(\s*['\"]sh['\"]", 0.8, "Rust shell"),
         (r"new\s+Function\s*\(\s*['\"]", 0.8, "JS Function()"),
+        (r"child_process\.(?:exec|execSync|spawn|fork)\s*\(", 0.8, "child_process"),
+        (r"`[^`]*\#\{?\w+[^`]*`", 0.7, "ruby backtick"),
+        (r"%x\([^)]*", 0.65, "ruby %x()"),
     ]
     for pat, conf, tag in patterns:
         results.extend(_match(content, pat, conf, tag))
