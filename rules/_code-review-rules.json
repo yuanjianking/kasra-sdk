@@ -1,0 +1,2791 @@
+{
+  "bundle": {
+    "series": "SEC",
+    "name": "Code Security Review — Phase 1 (P0 Rules)",
+    "description": "Core vulnerability detection rules for code repository security review. Phase 1 covers high-frequency, high-impact vulnerabilities that can be detected via regex and simple AST patterns.",
+    "version": "1.0.0",
+    "total": 83
+  },
+  "rules": [
+    {
+      "id": "SEC-01",
+      "name": "Hardcoded Cloud Credentials",
+      "description": "Detect hardcoded cloud platform credentials, API keys, tokens, and private keys in source code.",
+      "category": "credential_leak",
+      "severity": "P0",
+      "action": "warn",
+      "target_files": [
+        "**/*"
+      ],
+      "priority": "P0",
+      "detection_method": "regex",
+      "fp_risk": "中",
+      "performance": "低",
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "AKIA[0-9A-Z]{16}\\b",
+            "confidence": 0.95
+          },
+          {
+            "type": "regex",
+            "value": "ghp_[0-9A-Za-z]{36,40}\\b",
+            "confidence": 0.95
+          },
+          {
+            "type": "regex",
+            "value": "gh[oausr]_[0-9A-Za-z]{36}\\b",
+            "confidence": 0.9
+          },
+          {
+            "type": "regex",
+            "value": "glpat-[0-9A-Za-z\\-_]{20,40}\\b",
+            "confidence": 0.9
+          },
+          {
+            "type": "regex",
+            "value": "sk-[a-zA-Z0-9]{20,50}\\b",
+            "confidence": 0.9
+          },
+          {
+            "type": "regex",
+            "value": "sk-ant-[a-zA-Z0-9]{40,60}\\b",
+            "confidence": 0.9
+          },
+          {
+            "type": "regex",
+            "value": "(?i)-----BEGIN\\s+(?:RSA\\s+)?PRIVATE\\s+KEY-----",
+            "confidence": 0.95
+          },
+          {
+            "type": "regex",
+            "value": "(?i)-----BEGIN\\s+(?:OPEN)?SSH\\s+PRIVATE\\s+KEY-----",
+            "confidence": 0.95
+          },
+          {
+            "type": "regex",
+            "value": "(?i)-----BEGIN\\s+PGP\\s+(?:PRIVATE\\s+)?KEY\\s+BLOCK-----",
+            "confidence": 0.9
+          },
+          {
+            "type": "regex",
+            "value": "\\beyJ[A-Za-z0-9\\-_]+\\.[A-Za-z0-9\\-_]+\\.[A-Za-z0-9\\-_]+\\b",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "sk_live_[a-zA-Z0-9]{24,}\\b",
+            "confidence": 0.95
+          },
+          {
+            "type": "regex",
+            "value": "pk_live_[a-zA-Z0-9]{24,}\\b",
+            "confidence": 0.9
+          },
+          {
+            "type": "regex",
+            "value": "\\bAIza[0-9A-Za-z\\-_]{35}\\b",
+            "confidence": 0.9
+          }
+        ]
+      }
+    },
+    {
+      "id": "SEC-02",
+      "name": "Hardcoded Passwords / Connection Strings",
+      "description": "Detect hardcoded database connection strings, message queue URLs, and SSH URIs containing passwords.",
+      "category": "credential_leak",
+      "severity": "P0",
+      "action": "warn",
+      "target_files": [
+        "**/*.py",
+        "**/*.js",
+        "**/*.ts",
+        "**/*.java",
+        "**/*.go",
+        "**/*.cs",
+        "**/*.php",
+        "**/*.rb",
+        "**/*.rs",
+        "**/*.yaml",
+        "**/*.yml",
+        "**/*.json",
+        "**/*.env",
+        "**/*.env.*",
+        "**/*.properties",
+        "**/*.conf",
+        "**/*.config.*",
+        "**/*.ini"
+      ],
+      "priority": "P0",
+      "detection_method": "regex",
+      "fp_risk": "中",
+      "performance": "低",
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "[a-zA-Z]+://[^:]+:[^@]+@[^/\\s]+",
+            "confidence": 0.85
+          },
+          {
+            "type": "regex",
+            "value": "(?i)(?:jdbc|mysql|postgres|mongodb|redis|rediss|rabbitmq|amqp|kafka|sqs|memcache|hbase|cassandra)://[^\\s'\"]+",
+            "confidence": 0.8
+          },
+          {
+            "type": "regex",
+            "value": "(?i)DefaultEndpointsProtocol=https;AccountName=[^;]+;AccountKey=[^;]+",
+            "confidence": 0.9
+          },
+          {
+            "type": "regex",
+            "value": "ssh://[^:]+:[^@]+@",
+            "confidence": 0.85
+          },
+          {
+            "type": "regex",
+            "value": "(?i)(?:password|passwd|pwd)\\s*[:=]\\s*['\"][^'\"]{3,}['\"]",
+            "confidence": 0.6
+          }
+        ]
+      }
+    },
+    {
+      "id": "SEC-03",
+      "name": "Hardcoded Cryptographic Keys",
+      "description": "Detect hardcoded AES keys, HMAC secrets, JWT signing secrets, and cryptographic salt values embedded in source code.",
+      "category": "credential_leak",
+      "severity": "P1",
+      "action": "warn",
+      "target_files": [
+        "**/*.py",
+        "**/*.js",
+        "**/*.ts",
+        "**/*.java",
+        "**/*.go",
+        "**/*.cs",
+        "**/*.php",
+        "**/*.rb",
+        "**/*.rs"
+      ],
+      "priority": "P0",
+      "detection_method": "regex",
+      "fp_risk": "中",
+      "performance": "低",
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "(?i)(?:aes|secret|hmac|jwt_?secret|signing_?key|token_?secret)\\s*[:=]\\s*['\"][A-Za-z0-9\\+\\/=]{16,}['\"]",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "(?i)(?:salt|pepper)\\s*[:=]\\s*['\"][A-Za-z0-9\\+\\/=]{8,}['\"]",
+            "confidence": 0.6
+          },
+          {
+            "type": "regex",
+            "value": "(?i)jwt\\.(?:sign|encode)\\([^)]*['\"]secret['\"]",
+            "confidence": 0.8
+          }
+        ]
+      }
+    },
+    {
+      "id": "SEC-04",
+      "name": "Test Credentials Leftover",
+      "description": "Detect weak/test credentials that may have been left in production code.",
+      "category": "credential_leak",
+      "severity": "P2",
+      "action": "warn",
+      "target_files": [
+        "**/*.py",
+        "**/*.js",
+        "**/*.ts",
+        "**/*.java",
+        "**/*.go",
+        "**/*.cs",
+        "**/*.php",
+        "**/*.rb"
+      ],
+      "priority": "P0",
+      "detection_method": "regex",
+      "fp_risk": "中",
+      "performance": "低",
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "(?i)(?:password|passwd|pwd)\\s*[:=]\\s*['\"](?:password123|admin123|test123|P@ssw0rd|letmein|welcome|changeme|passw0rd)['\"]",
+            "confidence": 0.85
+          },
+          {
+            "type": "regex",
+            "value": "(?i)(?:username|user|login)\\s*[:=]\\s*['\"](?:admin|root|test|guest|sa)['\"]\\s*[,;]\\s*(?:\\n|\\s)*(?:password|passwd|pwd)\\s*[:=]\\s*['\"](?:admin|root|test|guest|sa|password)['\"]",
+            "confidence": 0.8
+          }
+        ]
+      }
+    },
+    {
+      "id": "SEC-05",
+      "name": "SQL Injection",
+      "description": "Detect string concatenation, f-string, or template string usage in SQL queries that may lead to SQL injection.",
+      "category": "injection",
+      "severity": "P0",
+      "action": "warn",
+      "target_files": [
+        "**/*.py",
+        "**/*.js",
+        "**/*.ts",
+        "**/*.java",
+        "**/*.go",
+        "**/*.cs",
+        "**/*.php",
+        "**/*.rb",
+        "**/*.rs",
+        "**/*.kt",
+        "**/*.swift"
+      ],
+      "priority": "P0",
+      "detection_method": "Python checker",
+      "fp_risk": "中",
+      "performance": "中",
+      "detection": {
+        "mode": "any",
+        "patterns": []
+      }
+    },
+    {
+      "id": "SEC-07",
+      "name": "OS Command Injection",
+      "description": "Detect OS command injection where user input is passed to shell execution functions.",
+      "category": "injection",
+      "severity": "P0",
+      "action": "warn",
+      "target_files": [
+        "**/*.py",
+        "**/*.js",
+        "**/*.ts",
+        "**/*.java",
+        "**/*.go",
+        "**/*.cs",
+        "**/*.php",
+        "**/*.rb",
+        "**/*.rs"
+      ],
+      "priority": "P0",
+      "detection_method": "Python checker",
+      "fp_risk": "中",
+      "performance": "中",
+      "detection": {
+        "mode": "any",
+        "patterns": []
+      }
+    },
+    {
+      "id": "SEC-08",
+      "name": "Unsafe Deserialization",
+      "description": "Detect unsafe deserialization patterns that can lead to remote code execution.",
+      "category": "injection",
+      "severity": "P0",
+      "action": "warn",
+      "target_files": [
+        "**/*.py",
+        "**/*.java",
+        "**/*.php",
+        "**/*.rb",
+        "**/*.cs",
+        "**/*.js",
+        "**/*.ts",
+        "**/*.go"
+      ],
+      "priority": "P0",
+      "detection_method": "Python checker",
+      "fp_risk": "低",
+      "performance": "低",
+      "detection": {
+        "mode": "any",
+        "patterns": []
+      }
+    },
+    {
+      "id": "SEC-09",
+      "name": "XXE (XML External Entity Injection)",
+      "description": "Detect XML parsers configured to allow external entity resolution, leading to XXE attacks.",
+      "category": "injection",
+      "severity": "P0",
+      "action": "warn",
+      "target_files": [
+        "**/*.py",
+        "**/*.java",
+        "**/*.js",
+        "**/*.ts",
+        "**/*.go",
+        "**/*.cs",
+        "**/*.php",
+        "**/*.rb"
+      ],
+      "priority": "P0",
+      "detection_method": "Python checker",
+      "fp_risk": "低",
+      "performance": "低",
+      "detection": {
+        "mode": "any",
+        "patterns": []
+      }
+    },
+    {
+      "id": "SEC-14",
+      "name": "Code Injection (eval/exec)",
+      "description": "Detect dangerous code injection via eval(), exec(), Function(), and similar dynamic code execution functions with untrusted input.",
+      "category": "injection",
+      "severity": "P0",
+      "action": "warn",
+      "target_files": [
+        "**/*.py",
+        "**/*.js",
+        "**/*.ts",
+        "**/*.java",
+        "**/*.php",
+        "**/*.rb",
+        "**/*.go",
+        "**/*.cs"
+      ],
+      "priority": "P0",
+      "detection_method": "Python checker",
+      "fp_risk": "低",
+      "performance": "低",
+      "detection": {
+        "mode": "any",
+        "patterns": []
+      }
+    },
+    {
+      "id": "SEC-15",
+      "name": "Cross-Site Scripting (XSS)",
+      "description": "Detect dangerous DOM manipulation APIs with untrusted data that lead to cross-site scripting.",
+      "category": "web_security",
+      "severity": "P0",
+      "action": "warn",
+      "target_files": [
+        "**/*.js",
+        "**/*.ts",
+        "**/*.jsx",
+        "**/*.tsx",
+        "**/*.vue",
+        "**/*.html",
+        "**/*.php",
+        "**/*.svelte"
+      ],
+      "priority": "P0",
+      "detection_method": "Python checker",
+      "fp_risk": "中",
+      "performance": "中",
+      "detection": {
+        "mode": "any",
+        "patterns": []
+      }
+    },
+    {
+      "id": "SEC-19",
+      "name": "Server-Side Request Forgery (SSRF)",
+      "description": "Detect user-controlled URLs passed to HTTP request functions that may lead to SSRF.",
+      "category": "web_security",
+      "severity": "P0",
+      "action": "warn",
+      "target_files": [
+        "**/*.py",
+        "**/*.js",
+        "**/*.ts",
+        "**/*.java",
+        "**/*.go",
+        "**/*.cs",
+        "**/*.php",
+        "**/*.rb"
+      ],
+      "priority": "P0",
+      "detection_method": "Python checker",
+      "fp_risk": "中",
+      "performance": "中",
+      "detection": {
+        "mode": "any",
+        "patterns": []
+      }
+    },
+    {
+      "id": "SEC-21",
+      "name": "Unrestricted File Upload",
+      "description": "Detect file upload implementations that lack proper security validation.",
+      "category": "web_security",
+      "severity": "P0",
+      "action": "warn",
+      "target_files": [
+        "**/*.py",
+        "**/*.js",
+        "**/*.ts",
+        "**/*.java",
+        "**/*.go",
+        "**/*.cs",
+        "**/*.php",
+        "**/*.rb"
+      ],
+      "priority": "P0",
+      "detection_method": "Python checker",
+      "fp_risk": "中",
+      "performance": "低",
+      "detection": {
+        "mode": "any",
+        "patterns": []
+      }
+    },
+    {
+      "id": "SEC-23",
+      "name": "Local/Remote File Inclusion (LFI/RFI)",
+      "description": "Detect dynamic file inclusion with user-controlled paths that enable arbitrary file access.",
+      "category": "web_security",
+      "severity": "P0",
+      "action": "warn",
+      "target_files": [
+        "**/*.php",
+        "**/*.js",
+        "**/*.ts",
+        "**/*.py",
+        "**/*.java",
+        "**/*.go"
+      ],
+      "priority": "P0",
+      "detection_method": "Python checker",
+      "fp_risk": "低",
+      "performance": "低",
+      "detection": {
+        "mode": "any",
+        "patterns": []
+      }
+    },
+    {
+      "id": "SEC-37",
+      "name": "Debug Mode / Information Leak",
+      "description": "Detect debug mode settings and verbose error configurations that leak internal information in production.",
+      "category": "security_config",
+      "severity": "P0",
+      "action": "warn",
+      "target_files": [
+        "**/*.py",
+        "**/*.js",
+        "**/*.ts",
+        "**/*.java",
+        "**/*.go",
+        "**/*.cs",
+        "**/*.php",
+        "**/*.rb",
+        "**/*.yaml",
+        "**/*.yml",
+        "**/*.env",
+        "**/*.properties",
+        "**/*.ini"
+      ],
+      "priority": "P0",
+      "detection_method": "key=value + regex",
+      "fp_risk": "低",
+      "performance": "低",
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "config_keyvalue",
+            "value": "DEBUG:^(?:True|true|1)$",
+            "confidence": 0.9
+          },
+          {
+            "type": "config_keyvalue",
+            "value": "FLASK_DEBUG:^(?:True|true|1)$",
+            "confidence": 0.9
+          },
+          {
+            "type": "config_keyvalue",
+            "value": "NODE_ENV:^development$",
+            "confidence": 0.9
+          },
+          {
+            "type": "regex",
+            "value": "(?i)\\\\bapp\\\\.run\\\\([^)]*debug\\\\s*=\\\\s*True",
+            "confidence": 0.85
+          },
+          {
+            "type": "regex",
+            "value": "(?i)\\\\bapp\\\\.run\\\\([^)]*debug\\\\s*=\\s*True",
+            "confidence": 0.85
+          },
+          {
+            "type": "regex",
+            "value": "(?i)app\\.run\\([^)]*debug\\s*=\\s*True",
+            "confidence": 0.85
+          }
+        ]
+      }
+    },
+    {
+      "id": "SEC-40",
+      "name": "Known CVE Dependencies",
+      "description": "Detect project dependencies with known Common Vulnerabilities and Exposures (CVEs).",
+      "category": "infrastructure_config",
+      "severity": "P0",
+      "action": "warn",
+      "target_files": [
+        "**/requirements.txt",
+        "**/Pipfile",
+        "**/Pipfile.lock",
+        "**/package.json",
+        "**/package-lock.json",
+        "**/yarn.lock",
+        "**/pom.xml",
+        "**/build.gradle",
+        "**/go.mod",
+        "**/Cargo.toml",
+        "**/Gemfile",
+        "**/Gemfile.lock",
+        "**/packages.config",
+        "**/*.csproj"
+      ],
+      "priority": "P0",
+      "detection_method": "regex",
+      "fp_risk": "低",
+      "performance": "中",
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "[\"']lodash[\"']\\s*:\\s*[\"']\\^?([\\d.]+)[\"']",
+            "confidence": 0.85
+          },
+          {
+            "type": "regex",
+            "value": "[\"']axios[\"']\\s*:\\s*[\"']\\^?([\\d.]+)[\"']",
+            "confidence": 0.85
+          },
+          {
+            "type": "regex",
+            "value": "[\"']minimist[\"']\\s*:\\s*[\"']\\^?([\\d.]+)[\"']",
+            "confidence": 0.85
+          },
+          {
+            "type": "regex",
+            "value": "[\"']express[\"']\\s*:\\s*[\"']\\^?([\\d.]+)[\"']",
+            "confidence": 0.85
+          },
+          {
+            "type": "regex",
+            "value": "[\"']moment[\"']\\s*:\\s*[\"']\\^?([\\d.]+)[\"']",
+            "confidence": 0.85
+          },
+          {
+            "type": "regex",
+            "value": "[\"']undici[\"']\\s*:\\s*[\"']\\^?([\\d.]+)[\"']",
+            "confidence": 0.85
+          },
+          {
+            "type": "regex",
+            "value": "(?i)^django[=>~]+([\\d.]+)",
+            "confidence": 0.8
+          },
+          {
+            "type": "regex",
+            "value": "(?i)^(?:pillow|Pillow)[=>~]+([\\d.]+)",
+            "confidence": 0.8
+          },
+          {
+            "type": "regex",
+            "value": "(?i)^requests[=>~]+([\\d.]+)",
+            "confidence": 0.8
+          },
+          {
+            "type": "regex",
+            "value": "(?i)^urllib3[=>~]+([\\d.]+)",
+            "confidence": 0.8
+          },
+          {
+            "type": "regex",
+            "value": "(?i)^cryptography[=>~]+([\\d.]+)",
+            "confidence": 0.8
+          },
+          {
+            "type": "regex",
+            "value": "(?i)log4j.*?<version>([\\d.]+)</version>",
+            "confidence": 0.85
+          }
+        ]
+      }
+    },
+    {
+      "id": "SEC-45",
+      "name": "Path Traversal",
+      "description": "Detect file operations using unsanitized user input that can lead to path traversal attacks.",
+      "category": "design_flaw",
+      "severity": "P0",
+      "action": "warn",
+      "target_files": [
+        "**/*.py",
+        "**/*.js",
+        "**/*.ts",
+        "**/*.java",
+        "**/*.go",
+        "**/*.cs",
+        "**/*.php",
+        "**/*.rb",
+        "**/*.rs"
+      ],
+      "priority": "P0",
+      "detection_method": "Python checker",
+      "fp_risk": "中",
+      "performance": "中",
+      "detection": {
+        "mode": "any",
+        "patterns": []
+      }
+    },
+    {
+      "id": "SEC-51",
+      "name": "Unsafe Direct Command Execution",
+      "description": "Detect direct execution of system commands via dangerous functions.",
+      "category": "design_flaw",
+      "severity": "P0",
+      "action": "warn",
+      "target_files": [
+        "**/*.py",
+        "**/*.js",
+        "**/*.ts",
+        "**/*.java",
+        "**/*.go",
+        "**/*.cs",
+        "**/*.php",
+        "**/*.rb",
+        "**/*.rs"
+      ],
+      "priority": "P0",
+      "detection_method": "Python checker",
+      "fp_risk": "低",
+      "performance": "低",
+      "detection": {
+        "mode": "any",
+        "patterns": []
+      }
+    },
+    {
+      "id": "SEC-06",
+      "name": "NoSQL Injection",
+      "description": "Detect NoSQL injection via $where, $ne bypass, and unsafe query building.",
+      "category": "injection",
+      "severity": "P1",
+      "action": "warn",
+      "priority": "P1",
+      "detection_method": "regex",
+      "fp_risk": "中",
+      "performance": "中",
+      "target_files": [
+        "**/*.py",
+        "**/*.js",
+        "**/*.ts",
+        "**/*.java",
+        "**/*.go",
+        "**/*.cs",
+        "**/*.php",
+        "**/*.rb"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "\\$where\\s*[:=]\\s*['\\\"][^'\\\"]*\\{?[A-Za-z_]",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "\\$where\\s*[:=]\\s*['\\\"]\\s*this\\.[^'\\\"]+['\\\"]",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "find\\s*\\(\\s*\\{[^}]*\\$where",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "N1QLQuery\\s*\\(\\s*['\\\"][^'\\\"]*\\+[A-Za-z_]",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "findByIdAnd(?:Update|Delete)\\s*\\(\\s*[A-Za-z_]\\w*\\s*,",
+            "confidence": 0.65
+          }
+        ]
+      }
+    },
+    {
+      "id": "SEC-10",
+      "name": "LDAP Injection",
+      "description": "Detect LDAP injection from unescaped user input in LDAP queries.",
+      "category": "injection",
+      "severity": "P1",
+      "action": "warn",
+      "priority": "P1",
+      "detection_method": "regex",
+      "fp_risk": "低",
+      "performance": "低",
+      "target_files": [
+        "**/*.py",
+        "**/*.java",
+        "**/*.cs",
+        "**/*.php",
+        "**/*.rb",
+        "**/*.js",
+        "**/*.ts"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "['\\\"][^'\\\"]*\\b(?:uid|cn|sn|mail)\\s*=\\s*['\\\"]\\s*\\+\\s*\\w+",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "DirContext\\.(?:search|lookup|list)\\s*\\(\\s*['\\\"][^'\\\"]*\\+\\s*\\w+",
+            "confidence": 0.75
+          },
+          {
+            "type": "regex",
+            "value": "InitialDirContext\\.(?:search|lookup)\\s*\\([^)]*\\+\\s*\\w+",
+            "confidence": 0.75
+          }
+        ]
+      }
+    },
+    {
+      "id": "SEC-11",
+      "name": "SSTI (Server-Side Template Injection)",
+      "description": "Detect user input passed to template rendering engines unsafely.",
+      "category": "injection",
+      "severity": "P1",
+      "action": "warn",
+      "priority": "P1",
+      "detection_method": "regex",
+      "fp_risk": "中",
+      "performance": "中",
+      "target_files": [
+        "**/*.py",
+        "**/*.java",
+        "**/*.js",
+        "**/*.ts",
+        "**/*.go",
+        "**/*.php",
+        "**/*.rb",
+        "**/*.cs"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "render_template_string\\s*\\(\\s*(?:f['\\\"]|['\\\"][^'\\\"]*\\+|['\\\"][^'\\\"]*\\{[^}]+\\})",
+            "confidence": 0.75
+          },
+          {
+            "type": "regex",
+            "value": "Template\\s*\\(\\s*['\\\"][^'\\\"]*\\+[^'\\\"]+['\\\"]\\s*\\)\\s*\\.render",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "Handlebars\\.compile\\s*\\(\\s*\\w+\\s*\\+",
+            "confidence": 0.65
+          },
+          {
+            "type": "regex",
+            "value": "\\$smarty->fetch\\s*\\(\\s*['\\\"][^'\\\"]*\\$",
+            "confidence": 0.7
+          }
+        ]
+      }
+    },
+    {
+      "id": "SEC-13",
+      "name": "Prototype Pollution",
+      "description": "Detect JS prototype pollution via __proto__ or constructor.prototype.",
+      "category": "injection",
+      "severity": "P1",
+      "action": "warn",
+      "priority": "P1",
+      "detection_method": "regex",
+      "fp_risk": "中",
+      "performance": "中",
+      "target_files": [
+        "**/*.js",
+        "**/*.ts",
+        "**/*.jsx",
+        "**/*.tsx"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "_\\.(?:merge|defaults|assign)\\s*\\([^)]*\\b(?:body|input|query|param|user|data)",
+            "confidence": 0.65
+          },
+          {
+            "type": "regex",
+            "value": "Object\\.(?:assign|create)\\s*\\([^)]*\\b(?:body|input|query|param|user|data)",
+            "confidence": 0.6
+          },
+          {
+            "type": "regex",
+            "value": "\\[\\s*['\\\"]__proto__['\\\"]\\s*\\]",
+            "confidence": 0.75
+          },
+          {
+            "type": "regex",
+            "value": "\\b__proto__\\b",
+            "confidence": 0.65
+          }
+        ]
+      }
+    },
+    {
+      "id": "SEC-16",
+      "name": "CORS Misconfiguration",
+      "description": "Detect all-origins CORS with credentials enabled.",
+      "category": "web_security",
+      "severity": "P1",
+      "action": "warn",
+      "priority": "P1",
+      "detection_method": "key=value + regex",
+      "fp_risk": "低",
+      "performance": "低",
+      "target_files": [
+        "**/*.py",
+        "**/*.js",
+        "**/*.ts",
+        "**/*.java",
+        "**/*.go",
+        "**/*.cs",
+        "**/*.php",
+        "**/*.rb",
+        "**/*.yaml",
+        "**/*.yml"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "config_keyvalue",
+            "value": "CORS_ALLOW_ALL_ORIGINS:^(?:True|true)$",
+            "confidence": 0.85
+          },
+          {
+            "type": "regex",
+            "value": "(?i)cors\\(\\{.*origin\\s*:\\s*true.*credentials\\s*:\\s*true",
+            "confidence": 0.8
+          },
+          {
+            "type": "regex",
+            "value": "(?i)AllowAnyOrigin.*SupportsCredentials",
+            "confidence": 0.8
+          }
+        ]
+      }
+    },
+    {
+      "id": "SEC-17",
+      "name": "CSRF Protection Missing",
+      "description": "Detect missing CSRF protection on state-changing endpoints.",
+      "category": "web_security",
+      "severity": "P1",
+      "action": "warn",
+      "priority": "P1",
+      "detection_method": "Python checker",
+      "fp_risk": "高",
+      "performance": "高",
+      "target_files": [
+        "**/*.py",
+        "**/*.js",
+        "**/*.ts",
+        "**/*.java",
+        "**/*.go",
+        "**/*.cs",
+        "**/*.php",
+        "**/*.rb"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": []
+      }
+    },
+    {
+      "id": "SEC-20",
+      "name": "Open Redirect",
+      "description": "Detect unvalidated redirect parameters.",
+      "category": "web_security",
+      "severity": "P1",
+      "action": "warn",
+      "priority": "P1",
+      "detection_method": "Python checker",
+      "fp_risk": "中",
+      "performance": "中",
+      "target_files": [
+        "**/*.py",
+        "**/*.js",
+        "**/*.ts",
+        "**/*.java",
+        "**/*.go",
+        "**/*.cs",
+        "**/*.php",
+        "**/*.rb"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": []
+      }
+    },
+    {
+      "id": "SEC-24",
+      "name": "Mass Assignment",
+      "description": "Detect request body directly bound to model attributes.",
+      "category": "web_security",
+      "severity": "P1",
+      "action": "warn",
+      "priority": "P1",
+      "detection_method": "Python checker",
+      "fp_risk": "中",
+      "performance": "中",
+      "target_files": [
+        "**/*.py",
+        "**/*.js",
+        "**/*.ts",
+        "**/*.java",
+        "**/*.go",
+        "**/*.cs",
+        "**/*.php",
+        "**/*.rb"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": []
+      }
+    },
+    {
+      "id": "SEC-25",
+      "name": "JWT Security Defects",
+      "description": "Detect alg:none, weak secrets, and missing validation.",
+      "category": "web_security",
+      "severity": "P1",
+      "action": "warn",
+      "priority": "P1",
+      "detection_method": "Python checker",
+      "fp_risk": "低",
+      "performance": "低",
+      "target_files": [
+        "**/*.py",
+        "**/*.js",
+        "**/*.ts",
+        "**/*.java",
+        "**/*.go",
+        "**/*.cs",
+        "**/*.php",
+        "**/*.rb"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": []
+      }
+    },
+    {
+      "id": "SEC-32",
+      "name": "Weak Cryptographic Algorithms",
+      "description": "Detect MD5/SHA-1/DES/RC4/ECB usage.",
+      "category": "cryptography",
+      "severity": "P1",
+      "action": "warn",
+      "priority": "P1",
+      "detection_method": "Python checker",
+      "fp_risk": "低",
+      "performance": "低",
+      "target_files": [
+        "**/*.py",
+        "**/*.js",
+        "**/*.ts",
+        "**/*.java",
+        "**/*.go",
+        "**/*.cs",
+        "**/*.php",
+        "**/*.rb",
+        "**/*.rs"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": []
+      }
+    },
+    {
+      "id": "SEC-33",
+      "name": "Insecure Randomness",
+      "description": "Detect non-cryptographic RNG in security contexts.",
+      "category": "cryptography",
+      "severity": "P1",
+      "action": "warn",
+      "priority": "P1",
+      "detection_method": "Python checker",
+      "fp_risk": "低",
+      "performance": "低",
+      "target_files": [
+        "**/*.py",
+        "**/*.js",
+        "**/*.ts",
+        "**/*.java",
+        "**/*.go",
+        "**/*.cs",
+        "**/*.php",
+        "**/*.rb"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": []
+      }
+    },
+    {
+      "id": "SEC-34",
+      "name": "TLS/SSL Certificate Validation Disabled",
+      "description": "Detect disabled TLS verification in HTTP clients.",
+      "category": "cryptography",
+      "severity": "P1",
+      "action": "warn",
+      "priority": "P1",
+      "detection_method": "Python checker",
+      "fp_risk": "低",
+      "performance": "低",
+      "target_files": [
+        "**/*.py",
+        "**/*.js",
+        "**/*.ts",
+        "**/*.java",
+        "**/*.go",
+        "**/*.cs",
+        "**/*.php",
+        "**/*.rb"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": []
+      }
+    },
+    {
+      "id": "SEC-36",
+      "name": "CI Script Risks",
+      "description": "Detect unsafe CI/CD scripts: curl-to-bash, plaintext creds, disabled checks.",
+      "category": "infrastructure_config",
+      "severity": "P1",
+      "action": "warn",
+      "priority": "P1",
+      "detection_method": "regex",
+      "fp_risk": "低",
+      "performance": "低",
+      "target_files": [
+        "**/*.sh",
+        "**/*.bash",
+        "**/Dockerfile",
+        "**/*.yml",
+        "**/*.yaml",
+        "**/Makefile"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "curl\\s+.*\\|\\s*bash\\b",
+            "confidence": 0.85
+          },
+          {
+            "type": "regex",
+            "value": "setenforce\\s+0|ufw\\s+disable|iptables\\s+-F",
+            "confidence": 0.85
+          },
+          {
+            "type": "regex",
+            "value": "(?i)--no-verify\\b|--no-audit\\b",
+            "confidence": 0.7
+          }
+        ]
+      }
+    },
+    {
+      "id": "SEC-38",
+      "name": "Insecure Configuration Defaults",
+      "description": "Detect empty passwords, known secrets, permissive CORS defaults.",
+      "category": "security_config",
+      "severity": "P1",
+      "action": "warn",
+      "priority": "P1",
+      "detection_method": "key=value + regex",
+      "fp_risk": "低",
+      "performance": "低",
+      "target_files": [
+        "**/*.py",
+        "**/*.js",
+        "**/*.ts",
+        "**/*.yaml",
+        "**/*.yml",
+        "**/*.env",
+        "**/*.properties"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "config_keyvalue",
+            "value": "SECRET_KEY:changeme|secret|password|default|development",
+            "confidence": 0.75
+          },
+          {
+            "type": "regex",
+            "value": "ALLOWED_HOSTS\\s*=\\s*\\[\\s*['\\\"]\\*['\\\"]\\s*\\]",
+            "confidence": 0.85
+          },
+          {
+            "type": "config_keyvalue",
+            "value": "SESSION_COOKIE_SECURE:^false$",
+            "confidence": 0.7
+          }
+        ]
+      }
+    },
+    {
+      "id": "SEC-42",
+      "name": "Plaintext Communication",
+      "description": "Detect HTTP/WS/FTP usage instead of encrypted alternatives.",
+      "category": "infrastructure_config",
+      "severity": "P1",
+      "action": "warn",
+      "priority": "P1",
+      "detection_method": "regex",
+      "fp_risk": "低",
+      "performance": "低",
+      "target_files": [
+        "**/*.py",
+        "**/*.js",
+        "**/*.ts",
+        "**/*.java",
+        "**/*.go",
+        "**/*.yaml",
+        "**/*.yml"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "http://\\w+\\.(?:com|org|net|io|app|dev)",
+            "confidence": 0.55
+          },
+          {
+            "type": "regex",
+            "value": "ws://\\w+",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "ftp://[^@]+:[^@]+@",
+            "confidence": 0.75
+          },
+          {
+            "type": "regex",
+            "value": "(?i)endpoint_url\\s*[:=]\\s*['\\\"]http://",
+            "confidence": 0.65
+          }
+        ]
+      }
+    },
+    {
+      "id": "SEC-44",
+      "name": "CI/CD Attack Surface",
+      "description": "Detect CI/CD attack surface issues: unlocked runners, excessive token permissions, missing SBOM.",
+      "category": "infrastructure_config",
+      "severity": "P1",
+      "action": "warn",
+      "priority": "P1",
+      "detection_method": "regex",
+      "fp_risk": "中",
+      "performance": "低",
+      "target_files": [
+        "**/ci.yml",
+        "**/cd.yml",
+        "**/.github/workflows/*.yml",
+        "**/*.gitlab-ci.yml",
+        "**/Jenkinsfile"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "(?i)self-hosted|self.hosted",
+            "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "(?i)permissions:\\s*write-all",
+            "confidence": 0.75
+          },
+          {
+            "type": "regex",
+            "value": "(?i)contents:\\s*write",
+            "confidence": 0.5
+          }
+        ]
+      }
+    },
+    {
+      "id": "IAC-01",
+      "name": "Dockerfile Security",
+      "description": "Detect insecure Dockerfile patterns.",
+      "category": "iac_docker",
+      "severity": "P1",
+      "action": "warn",
+      "priority": "P1",
+      "detection_method": "config (Dockerfile)",
+      "fp_risk": "低",
+      "performance": "低",
+      "target_files": [
+        "**/Dockerfile",
+        "**/Dockerfile.*"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "config_dockerfile",
+            "value": "FROM:\\s*:\\s*latest\\b",
+            "confidence": 0.7
+          },
+          {
+            "type": "config_dockerfile",
+            "value": "USER:^root$",
+            "confidence": 0.6
+          },
+          {
+            "type": "config_dockerfile",
+            "value": "ADD:^https?://",
+            "confidence": 0.6
+          }
+        ]
+      }
+    },
+    {
+      "id": "IAC-04",
+      "name": "K8s Workload Security",
+      "description": "Detect insecure Pod/Deployment configs.",
+      "category": "iac_kubernetes",
+      "severity": "P1",
+      "action": "warn",
+      "priority": "P1",
+      "detection_method": "config (YAML) + regex",
+      "fp_risk": "低",
+      "performance": "低",
+      "target_files": [
+        "**/*.yaml",
+        "**/*.yml"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "config_yaml",
+            "value": "spec.containers.securityContext.privileged:true",
+            "confidence": 0.85
+          },
+          {
+            "type": "config_yaml",
+            "value": "spec.containers.securityContext.allowPrivilegeEscalation:true",
+            "confidence": 0.8
+          },
+          {
+            "type": "config_yaml",
+            "value": "spec.hostNetwork:true",
+            "confidence": 0.7
+          },
+          {
+            "type": "config_yaml",
+            "value": "spec.containers.securityContext.runAsNonRoot:false",
+            "confidence": 0.75
+          },
+          {
+            "type": "regex",
+            "value": "privileged:\\s*true",
+            "confidence": 0.85
+          },
+          {
+            "type": "regex",
+            "value": "hostNetwork:\\s*true",
+            "confidence": 0.7
+          }
+        ]
+      }
+    },
+    {
+      "id": "IAC-08",
+      "name": "Terraform Storage Security",
+      "description": "Detect insecure Terraform storage configs.",
+      "category": "iac_terraform",
+      "severity": "P1",
+      "action": "warn",
+      "priority": "P1",
+      "detection_method": "regex",
+      "fp_risk": "低",
+      "performance": "低",
+      "target_files": [
+        "**/*.tf",
+        "**/*.tfvars"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "acl\\s*=\\s*['\\\"](?:public-read|public-read-write)['\\\"]",
+            "confidence": 0.85
+          }
+        ]
+      }
+    },
+    {
+      "id": "SEC-12",
+      "name": "Header Injection / CRLF",
+      "description": "Detect HTTP response header injection via unescaped user input.",
+      "category": "injection",
+      "severity": "P2",
+      "action": "warn",
+      "priority": "P2",
+      "detection_method": "regex",
+      "fp_risk": "低",
+      "performance": "低",
+      "target_files": [
+        "**/*.py",
+        "**/*.js",
+        "**/*.ts",
+        "**/*.php",
+        "**/*.rb"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "setHeader\\s*\\(\\s*['\\\"][^'\\\"]*['\\\"]\\s*,\\s*\\w+",
+            "confidence": 0.55
+          },
+          {
+            "type": "regex",
+            "value": "header\\s*\\(\\s*['\\\"][^'\\\"]*['\\\"]\\s*,\\s*['\\\"]?[^'\\\"]*\\+\\s*\\w+",
+            "confidence": 0.55
+          }
+        ]
+      }
+    },
+    {
+      "id": "SEC-26",
+      "name": "Security Response Headers Missing",
+      "description": "Detect missing security headers: CSP, HSTS, X-Frame-Options, X-Content-Type-Options.",
+      "category": "web_security",
+      "severity": "P2",
+      "action": "warn",
+      "priority": "P2",
+      "detection_method": "regex",
+      "fp_risk": "低",
+      "performance": "低",
+      "target_files": [
+        "**/*.py",
+        "**/*.js",
+        "**/*.ts",
+        "**/*.php",
+        "**/*.rb"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "(?i)Content-Security-Policy",
+            "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "(?i)Strict-Transport-Security",
+            "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "(?i)X-Frame-Options",
+            "confidence": 0.5
+          }
+        ]
+      }
+    },
+    {
+      "id": "SEC-27",
+      "name": "Session Management Defects",
+      "description": "Detect predictable session IDs, missing HttpOnly/Secure/SameSite flags.",
+      "category": "web_security",
+      "severity": "P1",
+      "action": "warn",
+      "priority": "P2",
+      "detection_method": "regex",
+      "fp_risk": "中",
+      "performance": "中",
+      "target_files": [
+        "**/*.py",
+        "**/*.js",
+        "**/*.ts",
+        "**/*.java",
+        "**/*.go",
+        "**/*.cs",
+        "**/*.php",
+        "**/*.rb"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "(?i)session\\.(?:id|token)\\s*[:=]\\s*(?:user\\.id|str\\(user_id\\))",
+            "confidence": 0.6
+          },
+          {
+            "type": "regex",
+            "value": "(?i)session_cookie_secure\\s*[:=]\\s*(?:False|false)",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "(?i)session_cookie_httponly\\s*[:=]\\s*(?:False|false)",
+            "confidence": 0.7
+          }
+        ]
+      }
+    },
+    {
+      "id": "SEC-28",
+      "name": "OAuth / OIDC Security Defects",
+      "description": "Detect missing state parameter, permissive redirect_uri, missing PKCE.",
+      "category": "web_security",
+      "severity": "P1",
+      "action": "warn",
+      "priority": "P2",
+      "detection_method": "regex",
+      "fp_risk": "中",
+      "performance": "高",
+      "target_files": [
+        "**/*.py",
+        "**/*.js",
+        "**/*.ts",
+        "**/*.java",
+        "**/*.go",
+        "**/*.cs"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "(?i)redirect_uri\\s*[:=]\\s*['\\\"](?!['\\\"])",
+            "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "(?i)response_type\\s*['\\\"]token['\\\"]",
+            "confidence": 0.7
+          }
+        ]
+      }
+    },
+    {
+      "id": "SEC-29",
+      "name": "WebSocket / SSE Security",
+      "description": "Detect WS (not WSS), missing Origin validation, unauthenticated WebSocket connections.",
+      "category": "web_security",
+      "severity": "P1",
+      "action": "warn",
+      "priority": "P2",
+      "detection_method": "regex",
+      "fp_risk": "中",
+      "performance": "中",
+      "target_files": [
+        "**/*.py",
+        "**/*.js",
+        "**/*.ts",
+        "**/*.java",
+        "**/*.go",
+        "**/*.cs"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "new\\s+WebSocket\\s*\\(\\s*['\\\"]ws://",
+            "confidence": 0.75
+          },
+          {
+            "type": "regex",
+            "value": "io\\s*\\(\\s*['\\\"]ws://",
+            "confidence": 0.7
+          }
+        ]
+      }
+    },
+    {
+      "id": "SEC-30",
+      "name": "gRPC Security",
+      "description": "Detect gRPC without TLS, reflection enabled in production, missing interceptor auth.",
+      "category": "web_security",
+      "severity": "P1",
+      "action": "warn",
+      "priority": "P2",
+      "detection_method": "regex",
+      "fp_risk": "中",
+      "performance": "中",
+      "target_files": [
+        "**/*.go",
+        "**/*.py",
+        "**/*.java",
+        "**/*.js",
+        "**/*.ts",
+        "**/*.rs"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "(?i)(?:insecure\\.NewCredentials|WithInsecure)\\(",
+            "confidence": 0.85
+          },
+          {
+            "type": "regex",
+            "value": "grpc\\.(?:UseInsecure|WithInsecure)\\s*\\(",
+            "confidence": 0.85
+          }
+        ]
+      }
+    },
+    {
+      "id": "SEC-31",
+      "name": "GraphQL Security",
+      "description": "Detect GraphQL introspection in production, missing depth/complexity limits, resolver auth gaps.",
+      "category": "web_security",
+      "severity": "P1",
+      "action": "warn",
+      "priority": "P2",
+      "detection_method": "regex",
+      "fp_risk": "中",
+      "performance": "中",
+      "target_files": [
+        "**/*.py",
+        "**/*.js",
+        "**/*.ts",
+        "**/*.java",
+        "**/*.go",
+        "**/*.rb"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "(?i)introspection\\s*[:=]\\s*true",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "(?i)introspection:\\s*true",
+            "confidence": 0.7
+          }
+        ]
+      }
+    },
+    {
+      "id": "SEC-35",
+      "name": "Insecure Certificate Storage",
+      "description": "Detect empty trust managers, disabled certificate pinning.",
+      "category": "cryptography",
+      "severity": "P1",
+      "action": "warn",
+      "priority": "P2",
+      "detection_method": "regex",
+      "fp_risk": "低",
+      "performance": "低",
+      "target_files": [
+        "**/*.py",
+        "**/*.java",
+        "**/*.go",
+        "**/*.cs",
+        "**/*.rb"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "(?i)new\\s+TrustManager\\s*\\(\\s*\\)\\s*\\{[^}]*\\}",
+            "confidence": 0.85
+          },
+          {
+            "type": "regex",
+            "value": "(?i)ALLOW_ALL_HOSTNAME_VERIFIER",
+            "confidence": 0.85
+          }
+        ]
+      }
+    },
+    {
+      "id": "SEC-41",
+      "name": "Subresource Integrity (SRI) Missing",
+      "description": "Detect CDN scripts without integrity attributes.",
+      "category": "infrastructure_config",
+      "severity": "P2",
+      "action": "warn",
+      "priority": "P2",
+      "detection_method": "regex",
+      "fp_risk": "低",
+      "performance": "低",
+      "target_files": [
+        "**/*.html",
+        "**/*.htm",
+        "**/*.php",
+        "**/*.jsx",
+        "**/*.tsx"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "<script\\s+[^>]*src=.*(?:cdn|cloudfront|unpkg|jsdelivr|cdnjs)",
+            "confidence": 0.5
+          }
+        ]
+      }
+    },
+    {
+      "id": "SEC-43",
+      "name": "Observability Data Leak",
+      "description": "Detect sensitive data in traces, metrics endpoints, and health checks.",
+      "category": "infrastructure_config",
+      "severity": "P1",
+      "action": "warn",
+      "priority": "P2",
+      "detection_method": "regex",
+      "fp_risk": "中",
+      "performance": "低",
+      "target_files": [
+        "**/*.py",
+        "**/*.js",
+        "**/*.ts",
+        "**/*.java",
+        "**/*.go",
+        "**/*.yaml",
+        "**/*.yml"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "(?i)/actuator\\s*",
+            "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "(?i)/metrics\\s*",
+            "confidence": 0.4
+          },
+          {
+            "type": "regex",
+            "value": "(?i)span\\.setAttribute.*['\\\"](?:sql|query|body|password)",
+            "confidence": 0.6
+          }
+        ]
+      }
+    },
+    {
+      "id": "SEC-46",
+      "name": "Race Condition / TOCTOU",
+      "description": "Detect check-then-use patterns without locks or transactions.",
+      "category": "design_flaw",
+      "severity": "P1",
+      "action": "warn",
+      "priority": "P2",
+      "detection_method": "Python checker",
+      "fp_risk": "高",
+      "performance": "高",
+      "target_files": [
+        "**/*.py",
+        "**/*.js",
+        "**/*.ts",
+        "**/*.java",
+        "**/*.go",
+        "**/*.cs",
+        "**/*.rb"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": []
+      }
+    },
+    {
+      "id": "SEC-47",
+      "name": "Resource Exhaustion / DoS",
+      "description": "Detect unbounded loops, missing timeouts, unlimited recursion.",
+      "category": "design_flaw",
+      "severity": "P1",
+      "action": "warn",
+      "priority": "P2",
+      "detection_method": "Python checker",
+      "fp_risk": "中",
+      "performance": "中",
+      "target_files": [
+        "**/*.py",
+        "**/*.js",
+        "**/*.ts",
+        "**/*.java",
+        "**/*.go",
+        "**/*.cs"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": []
+      }
+    },
+    {
+      "id": "SEC-48",
+      "name": "Zip Slip / Archive Extraction",
+      "description": "Detect archive extraction without path traversal checks.",
+      "category": "design_flaw",
+      "severity": "P1",
+      "action": "warn",
+      "priority": "P2",
+      "detection_method": "Python checker",
+      "fp_risk": "低",
+      "performance": "低",
+      "target_files": [
+        "**/*.py",
+        "**/*.java",
+        "**/*.go",
+        "**/*.cs",
+        "**/*.php",
+        "**/*.rb"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": []
+      }
+    },
+    {
+      "id": "SEC-49",
+      "name": "Memory Safety",
+      "description": "Detect unsafe memory operations in C/C++/Rust.",
+      "category": "design_flaw",
+      "severity": "P1",
+      "action": "warn",
+      "priority": "P2",
+      "detection_method": "Python checker",
+      "fp_risk": "中",
+      "performance": "中",
+      "target_files": [
+        "**/*.c",
+        "**/*.cpp",
+        "**/*.cxx",
+        "**/*.h",
+        "**/*.hpp",
+        "**/*.rs"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": []
+      }
+    },
+    {
+      "id": "SEC-50",
+      "name": "Error Handling Information Leak",
+      "description": "Detect stack traces and debug info returned to clients.",
+      "category": "design_flaw",
+      "severity": "P2",
+      "action": "warn",
+      "priority": "P2",
+      "detection_method": "Python checker",
+      "fp_risk": "中",
+      "performance": "中",
+      "target_files": [
+        "**/*.py",
+        "**/*.js",
+        "**/*.ts",
+        "**/*.java",
+        "**/*.go",
+        "**/*.cs",
+        "**/*.php",
+        "**/*.rb"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": []
+      }
+    },
+    {
+      "id": "SEC-60",
+      "name": "WebView Insecure Configuration",
+      "description": "Detect WebView with JavaScript + file:// access (RCE risk).",
+      "category": "mobile_security",
+      "severity": "P0",
+      "action": "warn",
+      "priority": "P2",
+      "detection_method": "regex",
+      "fp_risk": "低",
+      "performance": "低",
+      "target_files": [
+        "**/*.kt",
+        "**/*.java",
+        "**/*.swift",
+        "**/*.dart"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "(?i)setJavaScriptEnabled\\s*\\(\\s*true\\s*\\)",
+            "confidence": 0.75
+          },
+          {
+            "type": "regex",
+            "value": "(?i)setAllowFileAccess\\s*\\(\\s*true\\s*\\)",
+            "confidence": 0.7
+          }
+        ]
+      }
+    },
+    {
+      "id": "SEC-61",
+      "name": "Insecure Local Storage",
+      "description": "Detect tokens/passwords stored in SharedPreferences/UserDefaults.",
+      "category": "mobile_security",
+      "severity": "P1",
+      "action": "warn",
+      "priority": "P2",
+      "detection_method": "regex",
+      "fp_risk": "低",
+      "performance": "低",
+      "target_files": [
+        "**/*.kt",
+        "**/*.java",
+        "**/*.swift",
+        "**/*.dart"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "(?i)SharedPreferences\\.(?:putString|getString)\\s*\\(\\s*['\\\"](?:token|password|secret|api_key)",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "(?i)UserDefaults\\.(?:set|object)\\s*\\(\\s*['\\\"](?:token|password|secret)",
+            "confidence": 0.7
+          }
+        ]
+      }
+    },
+    {
+      "id": "SEC-62",
+      "name": "Deep Link Hijack",
+      "description": "Detect exported activities/intents without permission checks.",
+      "category": "mobile_security",
+      "severity": "P1",
+      "action": "warn",
+      "priority": "P2",
+      "detection_method": "regex",
+      "fp_risk": "中",
+      "performance": "低",
+      "target_files": [
+        "**/AndroidManifest.xml",
+        "**/*.kt",
+        "**/*.java",
+        "**/Info.plist",
+        "**/*.swift"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "android:exported\\s*=\\s*\\\"true\\\"",
+            "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "CFBundleURLSchemes",
+            "confidence": 0.5
+          }
+        ]
+      }
+    },
+    {
+      "id": "SEC-63",
+      "name": "Backup Leak",
+      "description": "Detect Android allowBackup enabled without restrictions.",
+      "category": "mobile_security",
+      "severity": "P1",
+      "action": "warn",
+      "priority": "P2",
+      "detection_method": "regex",
+      "fp_risk": "低",
+      "performance": "低",
+      "target_files": [
+        "**/AndroidManifest.xml"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "android:allowBackup\\s*=\\s*\\\"true\\\"",
+            "confidence": 0.7
+          }
+        ]
+      }
+    },
+    {
+      "id": "SEC-64",
+      "name": "Certificate Pinning Missing",
+      "description": "Detect missing SSL pinning in mobile apps.",
+      "category": "mobile_security",
+      "severity": "P1",
+      "action": "warn",
+      "priority": "P2",
+      "detection_method": "regex",
+      "fp_risk": "低",
+      "performance": "低",
+      "target_files": [
+        "**/*.kt",
+        "**/*.java",
+        "**/*.swift",
+        "**/*.dart"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "(?i)CertificatePinner|ServerTrustManager|SSL pinning",
+            "confidence": 0.5
+          }
+        ]
+      }
+    },
+    {
+      "id": "SEC-65",
+      "name": "Screenshot Leak",
+      "description": "Detect missing FLAG_SECURE on sensitive activities.",
+      "category": "mobile_security",
+      "severity": "P2",
+      "action": "warn",
+      "priority": "P2",
+      "detection_method": "regex",
+      "fp_risk": "低",
+      "performance": "低",
+      "target_files": [
+        "**/*.kt",
+        "**/*.java"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "(?i)FLAG_SECURE",
+            "confidence": 0.5
+          }
+        ]
+      }
+    },
+    {
+      "id": "SEC-66",
+      "name": "Clipboard Leak",
+      "description": "Detect sensitive data copied to clipboard without user notice.",
+      "category": "mobile_security",
+      "severity": "P2",
+      "action": "warn",
+      "priority": "P2",
+      "detection_method": "regex",
+      "fp_risk": "中",
+      "performance": "低",
+      "target_files": [
+        "**/*.kt",
+        "**/*.java",
+        "**/*.swift",
+        "**/*.dart",
+        "**/*.js",
+        "**/*.ts"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "(?i)ClipboardManager|UIPasteboard|Clipboard\\.setData",
+            "confidence": 0.55
+          }
+        ]
+      }
+    },
+    {
+      "id": "IAC-02",
+      "name": "Docker Compose Security",
+      "description": "Detect exposed ports to 0.0.0.0, plaintext env keys, host network mode.",
+      "category": "iac_docker",
+      "severity": "P2",
+      "action": "warn",
+      "priority": "P2",
+      "detection_method": "config (YAML) + regex",
+      "fp_risk": "低",
+      "performance": "低",
+      "target_files": [
+        "**/docker-compose.yml",
+        "**/docker-compose.yaml"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "ports:\\s*\\n\\s*-\\s*\"0\\.0\\.0\\.0",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "network_mode:\\s*host",
+            "confidence": 0.7
+          },
+          {
+            "type": "config_yaml",
+            "value": "services.ports:0\\.0\\.0\\.0",
+            "confidence": 0.7
+          },
+          {
+            "type": "config_yaml",
+            "value": "services.network_mode:host",
+            "confidence": 0.7
+          },
+          {
+            "type": "config_yaml",
+            "value": "services.environment:.*=.*:",
+            "confidence": 0.3
+          }
+        ]
+      }
+    },
+    {
+      "id": "IAC-03",
+      "name": "Container Runtime Security",
+      "description": "Detect privileged mode, excess capabilities, missing read-only rootfs.",
+      "category": "iac_docker",
+      "severity": "P2",
+      "action": "warn",
+      "priority": "P2",
+      "detection_method": "config (YAML) + regex",
+      "fp_risk": "低",
+      "performance": "低",
+      "target_files": [
+        "**/Dockerfile",
+        "**/Dockerfile.*",
+        "**/*.yaml",
+        "**/*.yml"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "config_yaml",
+            "value": "spec.containers.securityContext.privileged:true",
+            "confidence": 0.85
+          },
+          {
+            "type": "regex",
+            "value": "cap_add:\\s*\\n\\s*- SYS_ADMIN",
+            "confidence": 0.75
+          }
+        ]
+      }
+    },
+    {
+      "id": "IAC-05",
+      "name": "K8s Network & Storage Security",
+      "description": "Detect hostPath mounts, NodePort without ingress, missing NetworkPolicy.",
+      "category": "iac_kubernetes",
+      "severity": "P2",
+      "action": "warn",
+      "priority": "P2",
+      "detection_method": "config (YAML) + regex",
+      "fp_risk": "低",
+      "performance": "低",
+      "target_files": [
+        "**/*.yaml",
+        "**/*.yml"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "config_yaml",
+            "value": "spec.containers.volumeMounts.hostPath:.*",
+            "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "type:\\s*NodePort",
+            "confidence": 0.5
+          }
+        ]
+      }
+    },
+    {
+      "id": "IAC-06",
+      "name": "K8s RBAC / Credentials",
+      "description": "Detect over-permissive ClusterRoleBindings, wildcard RBAC rules.",
+      "category": "iac_kubernetes",
+      "severity": "P1",
+      "action": "warn",
+      "priority": "P2",
+      "detection_method": "regex",
+      "fp_risk": "低",
+      "performance": "低",
+      "target_files": [
+        "**/*.yaml",
+        "**/*.yml"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "apiGroups[\\s\\S]*?\\*[\\s\\S]*?resources[\\s\\S]*?\\*[\\s\\S]*?verbs[\\s\\S]*?\\*",
+            "confidence": 0.85
+          },
+          {
+            "type": "regex",
+            "value": "subjects:.*system:authenticated",
+            "confidence": 0.7
+          }
+        ]
+      }
+    },
+    {
+      "id": "IAC-07",
+      "name": "K8s Config & Secret Security",
+      "description": "Detect plaintext secrets, ConfigMap with sensitive data, missing External Secrets.",
+      "category": "iac_kubernetes",
+      "severity": "P2",
+      "action": "warn",
+      "priority": "P2",
+      "detection_method": "regex",
+      "fp_risk": "低",
+      "performance": "低",
+      "target_files": [
+        "**/*.yaml",
+        "**/*.yml"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "kind:\\s*Secret\\n(?!.*type:\\s*kubernetes.io)",
+            "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "kind:\\s*ConfigMap\\b",
+            "confidence": 0.3
+          }
+        ]
+      }
+    },
+    {
+      "id": "IAC-09",
+      "name": "Terraform Network Security",
+      "description": "Detect 0.0.0.0/0 security group rules, open high-risk ports, missing VPC Flow Logs.",
+      "category": "iac_terraform",
+      "severity": "P1",
+      "action": "warn",
+      "priority": "P2",
+      "detection_method": "regex",
+      "fp_risk": "低",
+      "performance": "低",
+      "target_files": [
+        "**/*.tf",
+        "**/*.tfvars"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "cidr_blocks\\s*=\\s*\\[\\s*['\\\"]0\\.0\\.0\\.0/0['\\\"]\\s*\\]",
+            "confidence": 0.85
+          },
+          {
+            "type": "regex",
+            "value": "from_port\\s*=\\s*(?:22|3389|6379|27017)",
+            "confidence": 0.7
+          }
+        ]
+      }
+    },
+    {
+      "id": "IAC-10",
+      "name": "Terraform IAM / Auth Security",
+      "description": "Detect IAM wildcard actions, direct user-attached policies, loose password policy.",
+      "category": "iac_terraform",
+      "severity": "P1",
+      "action": "warn",
+      "priority": "P2",
+      "detection_method": "regex",
+      "fp_risk": "低",
+      "performance": "低",
+      "target_files": [
+        "**/*.tf",
+        "**/*.tfvars"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "Action\\s*=\\s*\\[?\\s*['\\\"]\\*['\\\"]",
+            "confidence": 0.8
+          },
+          {
+            "type": "regex",
+            "value": "Effect\\s*=\\s*['\\\"]Allow['\\\"].*Principal\\s*=\\s*['\\\"]\\*['\\\"]",
+            "confidence": 0.7
+          }
+        ]
+      }
+    },
+    {
+      "id": "IAC-11",
+      "name": "Terraform General Security",
+      "description": "Detect local state storage, unencrypted state, missing provider version pinning.",
+      "category": "iac_terraform",
+      "severity": "P2",
+      "action": "warn",
+      "priority": "P2",
+      "detection_method": "regex",
+      "fp_risk": "低",
+      "performance": "低",
+      "target_files": [
+        "**/*.tf",
+        "**/*.tfvars"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "backend\\s*\\\"local\\\"",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "required_version\\s*=.*['\\\"][<>=]",
+            "confidence": 0.3
+          }
+        ]
+      }
+    },
+    {
+      "id": "IAC-12",
+      "name": "Ansible Security",
+      "description": "Detect ansible_become_password in plaintext, unsecured become, disabled validation.",
+      "category": "iac_config",
+      "severity": "P2",
+      "action": "warn",
+      "priority": "P2",
+      "detection_method": "config (YAML) + regex",
+      "fp_risk": "低",
+      "performance": "低",
+      "target_files": [
+        "**/*.yml",
+        "**/*.yaml",
+        "**/ansible.cfg"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "(?i)ansible_become_password",
+            "confidence": 0.85
+          },
+          {
+            "type": "regex",
+            "value": "(?i)ansible_ssh_pass",
+            "confidence": 0.85
+          },
+          {
+            "type": "config_yaml",
+            "value": "validate_certs:false",
+            "confidence": 0.7
+          }
+        ]
+      }
+    },
+    {
+      "id": "IAC-13",
+      "name": "Helm Chart Security",
+      "description": "Detect default secrets in values.yaml, latest image tag, missing securityContext.",
+      "category": "iac_config",
+      "severity": "P2",
+      "action": "warn",
+      "priority": "P2",
+      "detection_method": "config (YAML)",
+      "fp_risk": "低",
+      "performance": "低",
+      "target_files": [
+        "**/Chart.yaml",
+        "**/values.yaml",
+        "**/values.yml",
+        "**/templates/*.yaml",
+        "**/templates/*.yml"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "config_yaml",
+            "value": "image.tag:latest",
+            "confidence": 0.6
+          }
+        ]
+      }
+    },
+    {
+      "id": "IAC-14",
+      "name": "CloudFormation / CDK Security",
+      "description": "Detect public S3 buckets, open security groups, Lambda outside VPC.",
+      "category": "iac_aws",
+      "severity": "P1",
+      "action": "warn",
+      "priority": "P2",
+      "detection_method": "regex",
+      "fp_risk": "低",
+      "performance": "低",
+      "target_files": [
+        "**/template.yaml",
+        "**/template.yml",
+        "**/*.yaml",
+        "**/*.yml",
+        "**/*.ts",
+        "**/*.js"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "(?i)S3Bucket.*PublicRead|PublicReadWrite",
+            "confidence": 0.8
+          },
+          {
+            "type": "regex",
+            "value": "(?i)CidrIp:\\s*0\\.0\\.0\\.0/0",
+            "confidence": 0.7
+          }
+        ]
+      }
+    },
+    {
+      "id": "IAC-15",
+      "name": "Serverless Framework / SAM Security",
+      "description": "Detect public function URLs, missing WAF, excessive IAM permissions.",
+      "category": "iac_serverless",
+      "severity": "P2",
+      "action": "warn",
+      "priority": "P2",
+      "detection_method": "regex",
+      "fp_risk": "中",
+      "performance": "低",
+      "target_files": [
+        "**/serverless.yml",
+        "**/template.yaml",
+        "**/template.yml"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "(?i)auth:\\s*NONE",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "(?i)iamRoleStatements:\\s*\\n.*Effect:\\s*Allow.*Action:\\s*\\*",
+            "confidence": 0.7
+          }
+        ]
+      }
+    },
+    {
+      "id": "IAC-16",
+      "name": "Pulumi / Multi-cloud IaC Security",
+      "description": "Detect unencrypted state, secrets in stack config, missing provider pinning.",
+      "category": "iac_pulumi",
+      "severity": "P2",
+      "action": "warn",
+      "priority": "P2",
+      "detection_method": "regex",
+      "fp_risk": "低",
+      "performance": "低",
+      "target_files": [
+        "**/Pulumi.yaml",
+        "**/Pulumi.*.yaml",
+        "**/*.ts",
+        "**/*.py"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "(?i)encryptionSettings",
+            "confidence": 0.4
+          }
+        ]
+      }
+    },
+    {
+      "id": "IAC-17",
+      "name": "Serverless Function Security",
+      "description": "Detect public function URLs, event source injection, oversized IAM roles, env var secrets.",
+      "category": "iac_serverless",
+      "severity": "P1",
+      "action": "warn",
+      "priority": "P2",
+      "detection_method": "regex",
+      "fp_risk": "中",
+      "performance": "中",
+      "target_files": [
+        "**/*.py",
+        "**/*.js",
+        "**/*.ts",
+        "**/serverless.yml",
+        "**/*.yaml"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "(?i)lambda\\.FunctionUrl",
+            "confidence": 0.6
+          },
+          {
+            "type": "regex",
+            "value": "(?i)lambda:\\*",
+            "confidence": 0.5
+          }
+        ]
+      }
+    },
+    {
+      "id": "SEC-18",
+      "name": "Authentication Missing",
+      "description": "Detect API routes missing authentication middleware or decorators.",
+      "category": "web_security",
+      "severity": "P1",
+      "action": "warn",
+      "priority": "P0",
+      "detection_method": "Python checker",
+      "fp_risk": "高",
+      "performance": "低",
+      "target_files": [
+        "**/*.py",
+        "**/*.js",
+        "**/*.ts",
+        "**/*.java",
+        "**/*.go"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": []
+      }
+    },
+    {
+      "id": "SEC-22",
+      "name": "IDOR (Insecure Direct Object Reference)",
+      "description": "Detect route parameters passed directly to database queries without ownership checks.",
+      "category": "web_security",
+      "severity": "P1",
+      "action": "warn",
+      "priority": "P2",
+      "detection_method": "Python checker",
+      "fp_risk": "高",
+      "performance": "低",
+      "target_files": [
+        "**/*.py",
+        "**/*.js",
+        "**/*.ts",
+        "**/*.java",
+        "**/*.go"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": []
+      }
+    },
+    {
+      "id": "SEC-39",
+      "name": "Dependency Confusion",
+      "description": "Detect potential dependency confusion via suspicious lockfile entries.",
+      "category": "infrastructure_config",
+      "severity": "P1",
+      "action": "warn",
+      "priority": "P2",
+      "detection_method": "Python checker",
+      "fp_risk": "低",
+      "performance": "低",
+      "target_files": [
+        "**/package.json",
+        "**/requirements.txt",
+        "**/Pipfile"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": []
+      }
+    },
+    {
+      "id": "SEC-52",
+      "name": "Log Injection",
+      "description": "Detect unsanitized user input in log statements allowing log forging.",
+      "category": "design_flaw",
+      "severity": "P2",
+      "action": "warn",
+      "priority": "P2",
+      "detection_method": "Python checker",
+      "fp_risk": "低",
+      "performance": "低",
+      "target_files": [
+        "**/*.py",
+        "**/*.js",
+        "**/*.ts",
+        "**/*.java",
+        "**/*.go",
+        "**/*.cs"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": []
+      }
+    },
+    {
+      "id": "SEC-53",
+      "name": "Integer Overflow / Wrap-Around",
+      "description": "Detect potential integer overflow in financial arithmetic and user input multiplication.",
+      "category": "design_flaw",
+      "severity": "P1",
+      "action": "warn",
+      "priority": "P2",
+      "detection_method": "Python checker",
+      "fp_risk": "中",
+      "performance": "低",
+      "target_files": [
+        "**/*.py",
+        "**/*.js",
+        "**/*.ts",
+        "**/*.java",
+        "**/*.go",
+        "**/*.cs",
+        "**/*.rb"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": []
+      }
+    },
+    {
+      "id": "SEC-54",
+      "name": "Null Pointer Dereference",
+      "description": "Detect nullable return values used without null check.",
+      "category": "design_flaw",
+      "severity": "P2",
+      "action": "warn",
+      "priority": "P2",
+      "detection_method": "Python checker",
+      "fp_risk": "高",
+      "performance": "低",
+      "target_files": [
+        "**/*.java",
+        "**/*.go",
+        "**/*.cs",
+        "**/*.kt",
+        "**/*.swift"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": []
+      }
+    },
+    {
+      "id": "SEC-55",
+      "name": "Sensitive Data Plaintext Storage",
+      "description": "Detect passwords stored without hashing.",
+      "category": "data_protection",
+      "severity": "P1",
+      "action": "warn",
+      "priority": "P2",
+      "detection_method": "Python checker",
+      "fp_risk": "中",
+      "performance": "低",
+      "target_files": [
+        "**/*.py",
+        "**/*.js",
+        "**/*.ts",
+        "**/*.java",
+        "**/*.go",
+        "**/*.cs",
+        "**/*.php",
+        "**/*.rb",
+        "**/*.sql"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": []
+      }
+    },
+    {
+      "id": "SEC-56",
+      "name": "Weak Password Policy",
+      "description": "Detect password policies allowing min_length < 8.",
+      "category": "data_protection",
+      "severity": "P2",
+      "action": "warn",
+      "priority": "P2",
+      "detection_method": "Python checker",
+      "fp_risk": "低",
+      "performance": "低",
+      "target_files": [
+        "**/*.py",
+        "**/*.js",
+        "**/*.ts",
+        "**/*.java",
+        "**/*.go",
+        "**/*.cs",
+        "**/*.php"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": []
+      }
+    },
+    {
+      "id": "SEC-57",
+      "name": "Audit Log Missing",
+      "description": "Detect sensitive operations (DELETE/UPDATE users, GRANT/REVOKE) without audit log entries.",
+      "category": "data_protection",
+      "severity": "P2",
+      "action": "warn",
+      "priority": "P2",
+      "detection_method": "Python checker",
+      "fp_risk": "中",
+      "performance": "低",
+      "target_files": [
+        "**/*.py",
+        "**/*.js",
+        "**/*.ts",
+        "**/*.java",
+        "**/*.go",
+        "**/*.cs",
+        "**/*.php",
+        "**/*.rb",
+        "**/*.sql"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": []
+      }
+    },
+    {
+      "id": "SEC-58",
+      "name": "Brute Force Protection Missing",
+      "description": "Detect login endpoints without rate limiting or account lockout.",
+      "category": "data_protection",
+      "severity": "P1",
+      "action": "warn",
+      "priority": "P2",
+      "detection_method": "Python checker",
+      "fp_risk": "中",
+      "performance": "低",
+      "target_files": [
+        "**/*.py",
+        "**/*.js",
+        "**/*.ts",
+        "**/*.java",
+        "**/*.go",
+        "**/*.cs",
+        "**/*.php"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": []
+      }
+    },
+    {
+      "id": "SEC-59",
+      "name": "Incomplete Data Deletion / Residual Data",
+      "description": "Detect soft-delete patterns without cleanup or physical deletion strategy.",
+      "category": "data_protection",
+      "severity": "P2",
+      "action": "warn",
+      "priority": "P2",
+      "detection_method": "Python checker",
+      "fp_risk": "低",
+      "performance": "低",
+      "target_files": [
+        "**/*.py",
+        "**/*.js",
+        "**/*.ts",
+        "**/*.java",
+        "**/*.go",
+        "**/*.cs",
+        "**/*.sql"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": []
+      }
+    }
+  ]
+}

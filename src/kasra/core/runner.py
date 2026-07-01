@@ -35,10 +35,11 @@ from kasra.matchers.entropy_matcher import EntropyMatcher
 from kasra.matchers.keyword_matcher import KeywordMatcher
 from kasra.matchers.regex_matcher import ReMatcher
 from kasra.models.enums import MatchMode, PatternType
-from kasra.models.result import DetectionResult, MatchResult
+from kasra.models.result import DetectionResult, MatchResult, MatchSpan
 from kasra.models.rule import PatternDefinition, RuleDefinition
 from kasra.matchers.base import PatternMatcher
 from kasra.analyzers.context import AnalysisContext, EvidenceItem, MatchContext
+from kasra.rules.checks import has_checker, get_checker
 
 
 # ---------------------------------------------------------------------------
@@ -165,9 +166,11 @@ class RuleRunner:
                 return self._empty_result(rule, start)
 
             # Language filter: skip if rule targets a specific language
-            # and content is detected as a different language
-            if analysis_context and self._should_skip_for_language(rule, analysis_context):
-                return self._empty_result(rule, start)
+            # and content is detected as a different language.
+            # Python checkers handle their own language logic, skip this filter.
+            if not has_checker(rule.id):
+                if analysis_context and self._should_skip_for_language(rule, analysis_context):
+                    return self._empty_result(rule, start)
 
             # Min-length check: skip if content is too short
             min_len = rule.detection.min_length
@@ -203,8 +206,36 @@ class RuleRunner:
                     source_layer="syntactic",
                 ))
 
-            # Run each pattern
+            # Python checker: if this rule has a dedicated checker, run it
             effective_max_matches = self._resolve_max_matches(rule)
+            if has_checker(rule.id):
+                try:
+                    checker = get_checker(rule.id)
+                    raw_matches = checker(content)
+                    if raw_matches:
+                        triggered = True
+                        for rm in raw_matches[:effective_max_matches]:
+                            span = MatchSpan(start=rm["start"], end=rm["end"], matched=rm["matched"][:200])
+                            all_matches.append(MatchResult(
+                                rule_id=rule.id,
+                                pattern_index=0,
+                                pattern_type="regex",
+                                pattern_value=rm.get("pattern", ""),
+                                confidence=rm["confidence"],
+                                spans=[span],
+                                matched_text=rm["matched"][:200],
+                            ))
+                            evidence.append(EvidenceItem(
+                                rule_id=rule.id,
+                                reason=rm.get("pattern", "Python checker match"),
+                                matching_text=rm["matched"][:200],
+                                confidence=rm["confidence"],
+                                source_layer="lexical",
+                            ))
+                except Exception:
+                    pass
+
+            # Also run standard regex patterns (complements Python checkers)
             pattern_results: list[list[MatchResult]] = []
             for idx, pattern in enumerate(rule.detection.patterns):
                 matches = self._dispatcher.match(
@@ -212,7 +243,6 @@ class RuleRunner:
                     pattern,
                     max_matches=effective_max_matches,
                 )
-                # Tag with rule_id and pattern_index
                 for m in matches:
                     m.rule_id = rule.id
                     m.pattern_index = idx
@@ -220,19 +250,17 @@ class RuleRunner:
 
             # Combine based on mode
             if rule.detection.mode == MatchMode.ALL:
-                # ALL mode: every pattern must produce at least one match
                 if all(len(pr) > 0 for pr in pattern_results):
                     triggered = True
                     for pr in pattern_results:
                         all_matches.extend(pr)
             else:
-                # ANY mode (default): at least one pattern matches
                 for pr in pattern_results:
                     if pr:
                         triggered = True
                         all_matches.extend(pr)
                         if rule.detection.mode == MatchMode.ANY:
-                            break  # stop at first matched pattern in ANY mode
+                            break
 
             # ---- Layer 3: Post-match semantic processing ----
 

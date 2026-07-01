@@ -24,6 +24,7 @@ from typing import NoReturn
 
 from kasra.core.engine import RuleEngine
 from kasra.models.enums import Severity
+from kasra.scanner import CodeReviewScanner
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -84,6 +85,27 @@ def _build_parser() -> argparse.ArgumentParser:
     metrics_p = sub.add_parser("metrics", help="Show detection metrics from MetricsCollector")
     metrics_p.add_argument("--reset", action="store_true", help="Reset collected metrics")
 
+    # kasra-scan review <path>
+    review_p = sub.add_parser(
+        "review",
+        help="Code review scan — security audit of a code repository",
+        description=(
+            "Run code review security rules against a code repository. "
+            "Scans files matching rule targets and reports findings."
+        ),
+    )
+    review_p.add_argument("path", nargs="?", default=".",
+                          help="Directory to scan (default: current directory)")
+    review_p.add_argument("--rules", default=None,
+                          help="Path to code review rules JSON file")
+    review_p.add_argument("--severity", default=None,
+                          choices=["P0", "P1", "P2"],
+                          help="Minimum severity to report (default: all)")
+    review_p.add_argument("--json", action="store_true",
+                          help="Output findings as JSON")
+    review_p.add_argument("--quiet", action="store_true",
+                          help="Only show findings, no summary")
+
     return parser
 
 
@@ -123,6 +145,8 @@ def scan(args: argparse.Namespace) -> None:
                 sys.exit(1)
             result = engine.detect_input(text)
             _print_result(result)
+        elif command == "review":
+            _run_code_review(args)
         elif command == "health":
             _health_check(engine)
         elif command == "metrics":
@@ -202,6 +226,86 @@ def _print_file_result(filename: str, result) -> None:
         print(f"  {sev} {filename}: {rules}")
     else:
         print(f"  ✅ {filename}: clean")
+
+
+def _run_code_review(args: argparse.Namespace) -> None:
+    """``kasra-scan review`` — run code review scanner."""
+    scanner = CodeReviewScanner(rules_path=args.rules)
+
+    try:
+        count = scanner.load_rules()
+    except FileNotFoundError as e:
+        print(f"Error: {e}")
+        sys.exit(1)
+
+    scan_path = Path(args.path)
+    if not scan_path.exists():
+        print(f"Error: path not found: {scan_path}")
+        sys.exit(1)
+
+    result = scanner.scan(scan_path)
+
+    # Filter by severity if requested
+    findings = result.findings
+    if args.severity:
+        sev_order = {"P0": 0, "P1": 1, "P2": 2}
+        min_sev = sev_order.get(args.severity, 0)
+        findings = [f for f in findings if sev_order.get(f.severity, 99) >= min_sev]
+
+    # Output
+    if args.json:
+        import json
+        output = {
+            "scan_path": result.scan_path,
+            "files_scanned": result.files_scanned,
+            "files_skipped": result.files_skipped,
+            "findings": [
+                {
+                    "rule_id": f.rule_id,
+                    "rule_name": f.rule_name,
+                    "severity": f.severity,
+                    "file": f.file_path,
+                    "line": f.line_number,
+                    "column": f.column,
+                    "matched": f.matched_text,
+                    "confidence": f.confidence,
+                    "message": f.message,
+                }
+                for f in findings
+            ],
+            "duration_ms": round(result.duration_ms, 1),
+        }
+        print(json.dumps(output, indent=2, ensure_ascii=False))
+        return
+
+    # Summary
+    if not args.quiet:
+        severity_order = ["P0", "P1", "P2"]
+        by_sev = result.by_severity
+        print(f"📁 Scan: {result.scan_path}")
+        print(f"📄 Files: {result.files_scanned} scanned, {result.files_skipped} skipped")
+        sev_counts = ", ".join(
+            f"{sev}: {len(by_sev.get(sev, []))}" for sev in severity_order
+            if by_sev.get(sev)
+        )
+        print(f"🔍 Findings: {len(findings)} total ({sev_counts})")
+        print(f"⚡ Duration: {result.duration_ms:.0f}ms")
+        print()
+
+    # Findings detail
+    if findings:
+        for f in sorted(findings, key=lambda x: (x.severity, x.file_path, x.line_number)):
+            sev_icon = {"P0": "🔴", "P1": "🟡", "P2": "🟢"}.get(f.severity, "⚪")
+            print(f"  {sev_icon} [{f.rule_id}] {f.file_path}:{f.line_number}")
+            print(f"     {f.message}")
+    else:
+        if not args.quiet:
+            print("  No findings. ✨")
+
+    if result.error:
+        print(f"\n⚠️  Error: {result.error}")
+
+    sys.exit(1 if findings else 0)
 
 
 def _health_check(engine: RuleEngine) -> None:
