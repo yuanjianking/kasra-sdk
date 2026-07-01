@@ -125,10 +125,11 @@ _SINKS: dict[str, list[tuple[str, int]]] = {
         ("Class.forName", 0),
     ],
     "go": [
-        ("exec.Command", 0),
-        ("http.Get", 0), ("http.Post", 0),
-        ("sql.Query", 0), ("sql.QueryRow", 0),
-        ("db.Query", 0), ("db.Exec", 0),
+        ("exec.Command", 1),  # arg 1+ are user-controlled args
+        ("http.Get", 0),
+        ("http.Post", 0),
+        ("sql.Query", 0),
+        ("db.Exec", 0),
     ],
     "php": [
         ("shell_exec(", 0), ("exec(", 0), ("system(", 0),
@@ -274,9 +275,18 @@ class DataFlowAnalyzer(Analyzer):
         sinks = _SINKS.get(language, _SINKS.get("python", []))
 
         for sink_name, arg_idx in sinks:
-            pattern = re.compile(re.escape(sink_name) + r'\s*\(')
+            # If sink name already ends with '(', don't add another
+            if sink_name.endswith("("):
+                pattern = re.compile(re.escape(sink_name))
+            else:
+                pattern = re.compile(re.escape(sink_name) + r'\s*\(')
             for m in pattern.finditer(content):
-                found.append((sink_name, arg_idx, m.start()))
+                # Use the end of the match (the opening paren position) as the
+                # call start, so _extract_arg finds the correct paren.
+                # For dotted calls like "Runtime.getRuntime().exec(",
+                # m.start() points to "Runtime" but m.end()-1 points to "(".
+                call_start = m.end() - 1  # position of the opening paren
+                found.append((sink_name, arg_idx, call_start))
 
         return found
 
@@ -315,11 +325,16 @@ class DataFlowAnalyzer(Analyzer):
             or arg_text.startswith("r'") or arg_text.startswith('r"')
         )
         if is_string_literal:
-            # Check for interpolation or concatenation (f-strings, format, +, $)
-            if "{" in arg_text or "${" in arg_text or "+" in arg_text:
-                return "indirect"
-            if "," in arg_text:
-                return "indirect"
+            # Check for interpolation or concatenation (f-strings, format, +, concatenation ops)
+            # Only flag as indirect if there's actual variable interpolation
+            has_concat = "+" in arg_text or ". " in arg_text or " ." in arg_text
+            has_interp = "{" in arg_text or "$" in arg_text
+            if has_concat or has_interp:
+                # Must actually reference a variable
+                import re as _re
+                if _re.search(r'\{[\w.]+\}|[\$@]\w+|\b\w+\s*\+', arg_text):
+                    return "indirect"
+                return None  # dot in a URL like api.example.com is fine
             return None  # Hardcoded string = safe
 
         # Indirect: is it a tainted variable?

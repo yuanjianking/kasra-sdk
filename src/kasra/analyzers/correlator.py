@@ -230,7 +230,8 @@ class CrossRuleCorrelator:
                 current_rank = SEVERITY_RANK.get(target_result.severity, 99)
                 reduced_rank = SEVERITY_RANK.get(reduced_sev, 99)
 
-                if reduced_rank < current_rank:
+                # Reduction means making it less severe (higher rank number)
+                if reduced_rank > current_rank:
                     # Apply reduction
                     target_result.severity = reduced_sev
 

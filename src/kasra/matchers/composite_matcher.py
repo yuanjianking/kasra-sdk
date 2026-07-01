@@ -32,6 +32,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from kasra.exceptions.errors import PatternCompileError
 from kasra.matchers.base import PatternMatcher
 from kasra.matchers.regex_matcher import ReMatcher
 from kasra.matchers.keyword_matcher import KeywordMatcher
@@ -139,7 +140,11 @@ class CompositeMatcher(PatternMatcher):
         sub: PatternDefinition,
         content: str,
     ) -> list[MatchResult]:
-        """Run a single sub-pattern through the correct matcher."""
+        """Run a single sub-pattern through the correct matcher.
+
+        Handles recursive composite sub-patterns by creating a transient
+        CompositeMatcher for the nested level.
+        """
         sub_type = sub.type.value
 
         if sub_type == "regex":
@@ -148,6 +153,12 @@ class CompositeMatcher(PatternMatcher):
             return self._keyword.match_all(content, sub)
         if sub_type == "entropy":
             return self._entropy.match_all(content, sub)
+        if sub_type == "composite":
+            # Recursive composite matching — creates a fresh composite
+            # for this level to avoid cross-level state pollution
+            nested = CompositeMatcher(self._regex, self._keyword, self._entropy)
+            result = nested.match(content, sub)
+            return [result] if result is not None else []
         return []
 
     # ------------------------------------------------------------------
