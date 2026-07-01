@@ -51,8 +51,9 @@ class BatchScanPipeline(DetectionPipeline):
         normalizer: ContentNormalizer | None = None,
         max_file_size_mb: int = 10,
         exclude_patterns: list[str] | None = None,
+        **kwargs: Any,
     ) -> None:
-        super().__init__(registry, runner, action_registry, normalizer)
+        super().__init__(registry, runner, action_registry, normalizer, **kwargs)
         self._max_file_size = max_file_size_mb * 1024 * 1024
         self._exclude_patterns = exclude_patterns or [
             "node_modules/**",
