@@ -30,7 +30,7 @@ def engine() -> RuleEngine:
     """Create and load a RuleEngine with all rule series (I + O)."""
     eng = RuleEngine()
     count = eng.load_rules()  # loads all JSON bundles from the rules directory
-    assert count >= 108, f"Expected >=108 rules (I+O), got {count}"
+    assert count >= 110, f"Expected >=110 rules (I+O), got {count}"
     return eng
 
 
@@ -50,7 +50,7 @@ class TestEngineLifecycle:
         assert engine.is_loaded
         assert engine.rule_count > 0
         # At minimum the 57 I-series rules
-        assert engine.rule_count >= 108, f"Expected >=108 rules, got {engine.rule_count}"
+        assert engine.rule_count >= 110, f"Expected >=110 rules, got {engine.rule_count}"
 
     def test_rule_store_access(self, engine):
         rule = engine.get_rule("I-01")

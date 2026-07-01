@@ -4,7 +4,7 @@
     "name": "Output Security Rules",
     "description": "Detection rules for AI -> user output stage -- code safety, credential leak, PII, compliance, supply chain, content safety, i18n engineering",
     "version": "2.0.0",
-    "total": 51
+    "total": 53
   },
   "rules": [
     {
@@ -1329,6 +1329,41 @@
             "type": "regex",
             "value": "Creative\\s+Commons\\s+(?:Attribution|CC|BY)",
             "confidence": 0.6
+          },
+          {
+            "type": "regex",
+            "value": "European\\s+Union\\s+Public\\s+License|EUPL[-\\s]?(?:1\\.[12])?",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "Common\\s+Development\\s+and\\s+Distribution(?:\\s+License)?|CDDL[-\\s]?(?:1\\.0)?",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "Eclipse\\s+Public\\s+License|EPL[-\\s]?(?:1\\.0|2\\.0)?",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "The\\s+Unlicense|CC0\\s+1\\.0\\b|Public\\s+Domain(?:\\s+Dedication)?",
+            "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "ISC\\s+License\\b",
+            "confidence": 0.6
+          },
+          {
+            "type": "regex",
+            "value": "0BSD\\b|Zero\\s+Clause\\s+BSD",
+            "confidence": 0.6
+          },
+          {
+            "type": "regex",
+            "value": "WTFPL|Do\\s+What\\s+The\\s+Fuck\\s+You\\s+Want\\s+To\\s+Public\\s+License",
+            "confidence": 0.5
           }
         ]
       },
@@ -2187,11 +2222,56 @@
             "type": "regex",
             "value": "\\b4\\d{3}[\\s\\-]?\\d{4}[\\s\\-]?\\d{4}[\\s\\-]?\\d{4}\\b",
             "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "\\b[2-9]\\d{11}\\b",
+            "confidence": 0.75
+          },
+          {
+            "type": "regex",
+            "value": "\\b\\d{3}\\.\\d{3}\\.\\d{3}-\\d{2}\\b",
+            "confidence": 0.8
+          },
+          {
+            "type": "regex",
+            "value": "\\b\\d{2}\\.\\d{3}\\.\\d{3}/\\d{4}-\\d{2}\\b",
+            "confidence": 0.8
+          },
+          {
+            "type": "regex",
+            "value": "\\b\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}\\b",
+            "confidence": 0.65
+          },
+          {
+            "type": "regex",
+            "value": "\\b(?:N[L-M]|[A-Z]{2})\\d{6}[A-D]\\b",
+            "confidence": 0.8
+          },
+          {
+            "type": "regex",
+            "value": "\\b\\d{6}-[12]\\d{6}\\b",
+            "confidence": 0.8
+          },
+          {
+            "type": "regex",
+            "value": "\\b\\d{3}-\\d{3}-\\d{3}\\b",
+            "confidence": 0.65
+          },
+          {
+            "type": "regex",
+            "value": "\\b[A-Z]{5}\\d{4}[A-Z]\\b",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "\\b[STFG]\\d{7}[A-Z]\\b",
+            "confidence": 0.75
           }
         ]
       },
       "config": {
-        "max_matches": 50,
+        "max_matches": 100,
         "scopes": [
           "output"
         ],
@@ -2630,6 +2710,125 @@
         ],
         "no_pattern_match": true,
         "audit_log": true
+      }
+    },
+    {
+      "id": "O-52",
+      "name": "Audit Logging Missing in Sensitive Operations",
+      "description": "Detect AI-generated code containing financial transactions, user data modifications, or admin operations that should include audit logging. Common compliance requirement under SOX, GDPR, and PCI-DSS.",
+      "category": "compliance_legal",
+      "severity": "P2",
+      "action": "warn",
+      "applicable_stages": [
+        "output"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "\\b(?:INSERT|UPDATE|DELETE)\\s+(?:INTO\\s+)?(?:transactions|payments|orders|accounts|users_?(?:roles|permissions)?|customers|employees|salaries|financial)\\b",
+            "confidence": 0.6
+          },
+          {
+            "type": "regex",
+            "value": "\\b(?:transfer|withdraw|deposit|refund|settle)\\s*(?:\\(|\\s+\\w+\\s*\\(|\\s+FROM|\\s+INTO)",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "\\b(?:grant|revoke)\\s+\\w+\\s+(?:on|to|from)\\b",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "\\bUPDATE\\s+\\w+\\s+SET\\s+(?:balance|salary|credit|limit|role|permission|status|is_admin|is_active|is_verified)\\b",
+            "confidence": 0.65
+          },
+          {
+            "type": "regex",
+            "value": "DELETE\\s+FROM\\s+(?:users|accounts|customers|employees|logs_?history|sessions|tokens)",
+            "confidence": 0.75
+          },
+          {
+            "type": "regex",
+            "value": "\\b(?:payout|payroll|invoice|billing|charge|subscription)\\s*(?:\\(|\\s+\\w+\\s*\\(|\\s+FROM|\\s+INTO)",
+            "confidence": 0.65
+          }
+        ]
+      },
+      "config": {
+        "max_matches": 20,
+        "scopes": [
+          "output"
+        ],
+        "compliance_audit": true,
+        "admin_alert": true,
+        "flags": {
+          "regulation": [
+            "SOX",
+            "GDPR",
+            "PCI-DSS"
+          ],
+          "audit_field": "sensitive_ops"
+        }
+      }
+    },
+    {
+      "id": "O-53",
+      "name": "Incomplete Data Erasure / Missing Cascade Delete",
+      "description": "Detect AI-generated code that deletes user data without cascading to related records. GDPR Article 17 (Right to Erasure) and similar privacy regulations require complete data removal including associated records.",
+      "category": "compliance_legal",
+      "severity": "P2",
+      "action": "warn",
+      "applicable_stages": [
+        "output"
+      ],
+      "detection": {
+        "mode": "any",
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "DELETE\\s+(?:FROM\\s+)?users?\\s+(?:WHERE|\\s*;)",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "\\b(?:delete_user|remove_user|erase_user|destroy_user|purge_user|soft_delete|hard_delete)\\s*\\(",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "\\b(?:privacy|gdpr|right_to_erasure|right_to_be_forgotten|account_deletion|data_deletion|cascade_delete)\\s*(?:\\(|\\s+\\w+\\s*=)",
+            "confidence": 0.6
+          },
+          {
+            "type": "regex",
+            "value": "\\buser\\.(?:delete|remove|destroy|erase)\\s*\\(?",
+            "confidence": 0.65
+          },
+          {
+            "type": "regex",
+            "value": "\\bDROP\\s+(?:TABLE|VIEW|USER)\\b",
+            "confidence": 0.6
+          }
+        ]
+      },
+      "config": {
+        "max_matches": 20,
+        "scopes": [
+          "output"
+        ],
+        "compliance_audit": true,
+        "gdpr_audit": true,
+        "flags": {
+          "regulation": [
+            "GDPR",
+            "CCPA",
+            "PIPL"
+          ],
+          "audit_field": "data_erasure"
+        }
       }
     }
   ]

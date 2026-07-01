@@ -60,17 +60,17 @@ class TestEngineLifecycle:
     def test_load_rules(self):
         engine = RuleEngine()
         count = engine.load_rules()
-        assert count == 108, f"Expected 108 rules, got {count}"
+        assert count == 110, f"Expected 110 rules, got {count}"
         assert engine.is_loaded
-        assert engine.rule_count == 108
+        assert engine.rule_count == 110
 
     def test_load_rules_twice(self):
         """Reloading should replace rules, not accumulate."""
         engine = RuleEngine()
         engine.load_rules()
-        assert engine.rule_count == 108
+        assert engine.rule_count == 110
         engine.load_rules()
-        assert engine.rule_count == 108
+        assert engine.rule_count == 110
 
     def test_start_stop(self):
         engine = RuleEngine()
@@ -95,15 +95,15 @@ class TestEngineLifecycle:
         engine = RuleEngine()
         engine.load_rules()
         assert engine.store is not None
-        assert engine.store.count() == 108
+        assert engine.store.count() == 110
         assert engine.registry is not None
 
     def test_rule_counts_by_series(self, engine):
-        """108 rules = 57 I + 51 O."""
+        """110 rules = 57 I + 53 O."""
         from collections import Counter
         series = Counter(r.id.split("-")[0] for r in engine.get_rules())
         assert series.get("I", 0) == 57
-        assert series.get("O", 0) == 51
+        assert series.get("O", 0) == 53
 
     def test_rules_for_stage_input(self, engine):
         rules = engine.get_rules_for_stage("input")
@@ -111,13 +111,13 @@ class TestEngineLifecycle:
 
     def test_rules_for_stage_output(self, engine):
         rules = engine.get_rules_for_stage("output")
-        assert len(rules) == 51
+        assert len(rules) == 53
 
     def test_rule_severity_distribution(self, engine):
         from collections import Counter
         sevs = Counter(r.severity for r in engine.get_rules())
         total = sum(sevs.values())
-        assert total == 108
+        assert total == 110
 
 
 # ======================================================================
@@ -811,7 +811,7 @@ class TestCLIIntegration:
         finally:
             sys.stdout = sys.__stdout__
 
-        assert "108" in output
+        assert "110" in output
         assert "Rules" in output or "rules" in output
 
     def test_health_check_reports_healthy(self, engine):
@@ -849,7 +849,7 @@ class TestCLIIntegration:
         assert "I-01" in output
         assert "O-51" in output
         lines = output.strip().split("\n")
-        assert len(lines) == 108
+        assert len(lines) == 110
 
 
 # ======================================================================
@@ -863,7 +863,7 @@ class TestRuleJsonValidation:
         from kasra.rules.loader import RuleLoader
         loader = RuleLoader()
         rules = loader.load_all()
-        assert len(rules) == 108
+        assert len(rules) == 110
 
     def test_all_regex_patterns_compile(self):
         import json

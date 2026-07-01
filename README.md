@@ -17,7 +17,7 @@ if result.blocked:
 
 ## What it does
 
-Scan user prompts, AI responses, files, and conversation sessions against **108 security rules** with **7 action types** (block / warn / redact / clean / truncate / soft_allow / dynamic).
+Scan user prompts, AI responses, files, and conversation sessions against **110 security rules** with **7 action types** (block / warn / redact / clean / truncate / soft_allow / dynamic).
 
 | Scenario | Example | Detection |
 |----------|---------|-----------|
@@ -179,12 +179,12 @@ kasra/
 
 ---
 
-## Rule coverage (108 rules)
+## Rule coverage (110 rules)
 
 | Series | Count | Category |
 |--------|-------|----------|
 | I-01 ~ I-57 | 57 | Input: credentials, PII, injection, jailbreak, file risk, context security, malicious code |
-| O-01 ~ O-51 | 51 | Output: code safety, credential leak, config, supply chain, content safety, compliance, i18n |
+| O-01 ~ O-53 | 53 | Output: code safety, credential leak, config, supply chain, content safety, compliance, i18n, audit |
 
 All rules are defined as JSON bundles in `rules/`. No code changes needed to add new rule series.
 
