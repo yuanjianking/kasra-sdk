@@ -82,12 +82,12 @@ class TestReMatcher:
         assert m.match("", self.make_pat(r".")) is None
         assert m.match_all("", self.make_pat(r".")) == []
 
-    def test_invalid_regex_silent(self):
-        """Invalid regex should not raise during match."""
-        m = ReMatcher()
-        result = m.match("test", self.make_pat(r"["))
-        # Should not raise; either matches or returns None gracefully
-        assert result is None or result is not None
+    def test_invalid_regex_caught_by_dispatcher(self):
+        """Invalid regex should be caught by MatcherDispatcher."""
+        from kasra.core.runner import MatcherDispatcher
+        m = MatcherDispatcher()
+        results = m.match("test", self.make_pat(r"["))
+        assert results == []  # Dispatcher catches and returns empty
 
     def test_validate_invalid(self):
         """Validation should raise on invalid regex."""

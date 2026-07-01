@@ -137,7 +137,6 @@ class TestTextUtils:
         assert len(result) > 0
 
     def test_normalize_text_invisible(self):
-        # Use string with Unicode zero-width space (U+200B)
         text = "hello​world"
         result = normalize_text(text)
         assert "​" not in result
@@ -225,12 +224,12 @@ class TestImportsUtils:
         assert mod is not None
 
     def test_lazy_import_nonexistent(self):
-        import sys
-        try:
-            lazy_import("_kasra_test_nonexistent_module_xyz_12345")
-            assert False, "Should have raised"
-        except (ImportError, ModuleNotFoundError):
-            pass
+        """lazy_import returns an object that raises on access if module missing."""
+        mod = lazy_import("_kasra_nonexistent_module_xyz_12345")
+        # Does not raise at import time — only at access time
+        import pytest
+        with pytest.raises((ImportError, ModuleNotFoundError)):
+            _ = mod.some_attr
 
     def test_optional_import_exists(self):
         mod = optional_import("json")

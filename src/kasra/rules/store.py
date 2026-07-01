@@ -87,7 +87,7 @@ class RuleStore:
 
     def count_by_severity(self) -> dict[Severity, int]:
         """Return counts per severity level."""
-        return {sev: len(self._by_severity[sev]) for sev in Severity}
+        return {sev: len(self._by_severity.get(sev, [])) for sev in Severity}
 
     # ------------------------------------------------------------------
     # Bulk mutation (copy-on-write)

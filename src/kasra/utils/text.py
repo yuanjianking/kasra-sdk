@@ -66,9 +66,17 @@ def strip_control(text: str, keep_newlines: bool = True) -> str:
     return "".join(chars)
 
 
-def nfc_normalize(text: str) -> str:
-    """Normalize *text* to NFC form (canonical composition)."""
-    return unicodedata.normalize("NFC", text)
+def nfc_normalize(text: str, form: str = "NFC") -> str:
+    """Normalize *text* to the specified Unicode form.
+
+    Args:
+        text: Input string.
+        form: Unicode normalization form (``"NFC"``, ``"NFKC"``, ``"NFD"``, ``"NFKD"``).
+
+    Returns:
+        Normalized text.
+    """
+    return unicodedata.normalize(form.upper(), text)
 
 
 def normalize_text(text: str, keep_newlines: bool = True, form: str = "NFC") -> str:
