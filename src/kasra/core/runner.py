@@ -116,7 +116,7 @@ def _match_via_semgrep(
         return
 
     try:
-        findings = runner.run("<inline>", content, rule_id)
+        findings = runner.run(content, "<inline>", [rule_id])
         for f in findings:
             span = MatchSpan(start=f.line_number, end=f.line_number, matched=f.matched_text[:200])
             all_matches.append(MatchResult(
@@ -211,8 +211,8 @@ class RuleRunner:
             if rule.config and rule.config.no_pattern_match:
                 return self._run_config_checks(content, rule, analysis_context, start)
 
-            # No patterns defined → not triggered
-            if not rule.detection.patterns:
+            # No patterns defined → not triggered (unless Python checker handles it)
+            if not rule.detection.patterns and not has_checker(rule.id):
                 return self._empty_result(rule, start)
 
             # Language filter: skip if rule targets a specific language

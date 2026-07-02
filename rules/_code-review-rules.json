@@ -556,73 +556,12 @@
         "**/*.csproj"
       ],
       "priority": "P0",
-      "detection_method": "regex",
+      "detection_method": "Python checker (CVE database)",
       "fp_risk": "低",
       "performance": "中",
       "detection": {
         "mode": "any",
-        "patterns": [
-          {
-            "type": "regex",
-            "value": "[\"']lodash[\"']\\s*:\\s*[\"']\\^?([\\d.]+)[\"']",
-            "confidence": 0.85
-          },
-          {
-            "type": "regex",
-            "value": "[\"']axios[\"']\\s*:\\s*[\"']\\^?([\\d.]+)[\"']",
-            "confidence": 0.85
-          },
-          {
-            "type": "regex",
-            "value": "[\"']minimist[\"']\\s*:\\s*[\"']\\^?([\\d.]+)[\"']",
-            "confidence": 0.85
-          },
-          {
-            "type": "regex",
-            "value": "[\"']express[\"']\\s*:\\s*[\"']\\^?([\\d.]+)[\"']",
-            "confidence": 0.85
-          },
-          {
-            "type": "regex",
-            "value": "[\"']moment[\"']\\s*:\\s*[\"']\\^?([\\d.]+)[\"']",
-            "confidence": 0.85
-          },
-          {
-            "type": "regex",
-            "value": "[\"']undici[\"']\\s*:\\s*[\"']\\^?([\\d.]+)[\"']",
-            "confidence": 0.85
-          },
-          {
-            "type": "regex",
-            "value": "(?i)^django[=>~]+([\\d.]+)",
-            "confidence": 0.8
-          },
-          {
-            "type": "regex",
-            "value": "(?i)^(?:pillow|Pillow)[=>~]+([\\d.]+)",
-            "confidence": 0.8
-          },
-          {
-            "type": "regex",
-            "value": "(?i)^requests[=>~]+([\\d.]+)",
-            "confidence": 0.8
-          },
-          {
-            "type": "regex",
-            "value": "(?i)^urllib3[=>~]+([\\d.]+)",
-            "confidence": 0.8
-          },
-          {
-            "type": "regex",
-            "value": "(?i)^cryptography[=>~]+([\\d.]+)",
-            "confidence": 0.8
-          },
-          {
-            "type": "regex",
-            "value": "(?i)log4j.*?<version>([\\d.]+)</version>",
-            "confidence": 0.85
-          }
-        ]
+        "patterns": []
       }
     },
     {
@@ -687,7 +626,7 @@
       "severity": "P1",
       "action": "warn",
       "priority": "P1",
-      "detection_method": "regex",
+      "detection_method": "regex (Python checker pending)",
       "fp_risk": "中",
       "performance": "中",
       "target_files": [
@@ -705,27 +644,12 @@
         "patterns": [
           {
             "type": "regex",
-            "value": "\\$where\\s*[:=]\\s*['\\\"][^'\\\"]*\\{?[A-Za-z_]",
+            "value": "\\$where\\s*'?\\s*:",
             "confidence": 0.7
           },
           {
             "type": "regex",
-            "value": "\\$where\\s*[:=]\\s*['\\\"]\\s*this\\.[^'\\\"]+['\\\"]",
-            "confidence": 0.7
-          },
-          {
-            "type": "regex",
-            "value": "find\\s*\\(\\s*\\{[^}]*\\$where",
-            "confidence": 0.7
-          },
-          {
-            "type": "regex",
-            "value": "N1QLQuery\\s*\\(\\s*['\\\"][^'\\\"]*\\+[A-Za-z_]",
-            "confidence": 0.7
-          },
-          {
-            "type": "regex",
-            "value": "findByIdAnd(?:Update|Delete)\\s*\\(\\s*[A-Za-z_]\\w*\\s*,",
+            "value": "findByIdAnd(?:Update|Delete)\\s*\\(\\s*\\w+\\s*,",
             "confidence": 0.65
           }
         ]
@@ -739,7 +663,7 @@
       "severity": "P1",
       "action": "warn",
       "priority": "P1",
-      "detection_method": "regex",
+      "detection_method": "regex (Python checker pending)",
       "fp_risk": "低",
       "performance": "低",
       "target_files": [
@@ -758,16 +682,6 @@
             "type": "regex",
             "value": "['\\\"][^'\\\"]*\\b(?:uid|cn|sn|mail)\\s*=\\s*['\\\"]\\s*\\+\\s*\\w+",
             "confidence": 0.7
-          },
-          {
-            "type": "regex",
-            "value": "DirContext\\.(?:search|lookup|list)\\s*\\(\\s*['\\\"][^'\\\"]*\\+\\s*\\w+",
-            "confidence": 0.75
-          },
-          {
-            "type": "regex",
-            "value": "InitialDirContext\\.(?:search|lookup)\\s*\\([^)]*\\+\\s*\\w+",
-            "confidence": 0.75
           }
         ]
       }
@@ -780,7 +694,7 @@
       "severity": "P1",
       "action": "warn",
       "priority": "P1",
-      "detection_method": "regex",
+      "detection_method": "regex (Python checker pending)",
       "fp_risk": "中",
       "performance": "中",
       "target_files": [
@@ -798,23 +712,13 @@
         "patterns": [
           {
             "type": "regex",
-            "value": "render_template_string\\s*\\(\\s*(?:f['\\\"]|['\\\"][^'\\\"]*\\+|['\\\"][^'\\\"]*\\{[^}]+\\})",
+            "value": "render_template_string\\s*\\(\\s*(?:f['\\\"]|['\\\"][^'\\\"]*\\+)",
             "confidence": 0.75
-          },
-          {
-            "type": "regex",
-            "value": "Template\\s*\\(\\s*['\\\"][^'\\\"]*\\+[^'\\\"]+['\\\"]\\s*\\)\\s*\\.render",
-            "confidence": 0.7
           },
           {
             "type": "regex",
             "value": "Handlebars\\.compile\\s*\\(\\s*\\w+\\s*\\+",
             "confidence": 0.65
-          },
-          {
-            "type": "regex",
-            "value": "\\$smarty->fetch\\s*\\(\\s*['\\\"][^'\\\"]*\\$",
-            "confidence": 0.7
           }
         ]
       }
@@ -827,7 +731,7 @@
       "severity": "P1",
       "action": "warn",
       "priority": "P1",
-      "detection_method": "regex",
+      "detection_method": "regex (Python checker pending)",
       "fp_risk": "中",
       "performance": "中",
       "target_files": [
@@ -841,23 +745,13 @@
         "patterns": [
           {
             "type": "regex",
-            "value": "_\\.(?:merge|defaults|assign)\\s*\\([^)]*\\b(?:body|input|query|param|user|data)",
+            "value": "_\\.(?:merge|defaults|assign)\\s*\\([^)]*\\b(?:body|input|query|param|user)",
             "confidence": 0.65
-          },
-          {
-            "type": "regex",
-            "value": "Object\\.(?:assign|create)\\s*\\([^)]*\\b(?:body|input|query|param|user|data)",
-            "confidence": 0.6
           },
           {
             "type": "regex",
             "value": "\\[\\s*['\\\"]__proto__['\\\"]\\s*\\]",
             "confidence": 0.75
-          },
-          {
-            "type": "regex",
-            "value": "\\b__proto__\\b",
-            "confidence": 0.65
           }
         ]
       }
@@ -1376,7 +1270,7 @@
       "severity": "P2",
       "action": "warn",
       "priority": "P2",
-      "detection_method": "regex",
+      "detection_method": "regex (Python checker pending)",
       "fp_risk": "低",
       "performance": "低",
       "target_files": [
@@ -1392,11 +1286,6 @@
           {
             "type": "regex",
             "value": "setHeader\\s*\\(\\s*['\\\"][^'\\\"]*['\\\"]\\s*,\\s*\\w+",
-            "confidence": 0.55
-          },
-          {
-            "type": "regex",
-            "value": "header\\s*\\(\\s*['\\\"][^'\\\"]*['\\\"]\\s*,\\s*['\\\"]?[^'\\\"]*\\+\\s*\\w+",
             "confidence": 0.55
           }
         ]
@@ -1449,7 +1338,7 @@
       "severity": "P1",
       "action": "warn",
       "priority": "P2",
-      "detection_method": "regex",
+      "detection_method": "regex (Python checker pending)",
       "fp_risk": "中",
       "performance": "中",
       "target_files": [
@@ -1467,18 +1356,8 @@
         "patterns": [
           {
             "type": "regex",
-            "value": "(?i)session\\.(?:id|token)\\s*[:=]\\s*(?:user\\.id|str\\(user_id\\))",
-            "confidence": 0.6
-          },
-          {
-            "type": "regex",
-            "value": "(?i)session_cookie_secure\\s*[:=]\\s*(?:False|false)",
-            "confidence": 0.7
-          },
-          {
-            "type": "regex",
-            "value": "(?i)session_cookie_httponly\\s*[:=]\\s*(?:False|false)",
-            "confidence": 0.7
+            "value": "session\\.(?:id|token)\\s*[:=]",
+            "confidence": 0.5
           }
         ]
       }
@@ -1491,7 +1370,7 @@
       "severity": "P1",
       "action": "warn",
       "priority": "P2",
-      "detection_method": "regex",
+      "detection_method": "regex (Python checker pending)",
       "fp_risk": "中",
       "performance": "高",
       "target_files": [
@@ -1505,11 +1384,6 @@
       "detection": {
         "mode": "any",
         "patterns": [
-          {
-            "type": "regex",
-            "value": "(?i)redirect_uri\\s*[:=]\\s*['\\\"](?!['\\\"])",
-            "confidence": 0.5
-          },
           {
             "type": "regex",
             "value": "(?i)response_type\\s*['\\\"]token['\\\"]",
@@ -1526,7 +1400,7 @@
       "severity": "P1",
       "action": "warn",
       "priority": "P2",
-      "detection_method": "regex",
+      "detection_method": "regex (Python checker pending)",
       "fp_risk": "中",
       "performance": "中",
       "target_files": [
@@ -1544,11 +1418,6 @@
             "type": "regex",
             "value": "new\\s+WebSocket\\s*\\(\\s*['\\\"]ws://",
             "confidence": 0.75
-          },
-          {
-            "type": "regex",
-            "value": "io\\s*\\(\\s*['\\\"]ws://",
-            "confidence": 0.7
           }
         ]
       }
@@ -1561,7 +1430,7 @@
       "severity": "P1",
       "action": "warn",
       "priority": "P2",
-      "detection_method": "regex",
+      "detection_method": "regex (Python checker pending)",
       "fp_risk": "中",
       "performance": "中",
       "target_files": [
@@ -1577,13 +1446,13 @@
         "patterns": [
           {
             "type": "regex",
-            "value": "(?i)(?:insecure\\.NewCredentials|WithInsecure)\\(",
+            "value": "(?i)insecure\\.NewCredentials\\(\\)",
             "confidence": 0.85
           },
           {
             "type": "regex",
-            "value": "grpc\\.(?:UseInsecure|WithInsecure)\\s*\\(",
-            "confidence": 0.85
+            "value": "(?i)WithInsecure\\s*\\(",
+            "confidence": 0.8
           }
         ]
       }
@@ -1596,7 +1465,7 @@
       "severity": "P1",
       "action": "warn",
       "priority": "P2",
-      "detection_method": "regex",
+      "detection_method": "regex (Python checker pending)",
       "fp_risk": "中",
       "performance": "中",
       "target_files": [
@@ -1612,12 +1481,7 @@
         "patterns": [
           {
             "type": "regex",
-            "value": "(?i)introspection\\s*[:=]\\s*true",
-            "confidence": 0.7
-          },
-          {
-            "type": "regex",
-            "value": "(?i)introspection:\\s*true",
+            "value": "(?i)(?:introspection)\\s*[:=]\\s*true",
             "confidence": 0.7
           }
         ]
@@ -1631,7 +1495,7 @@
       "severity": "P1",
       "action": "warn",
       "priority": "P2",
-      "detection_method": "regex",
+      "detection_method": "regex (Python checker pending)",
       "fp_risk": "低",
       "performance": "低",
       "target_files": [
@@ -1644,11 +1508,6 @@
       "detection": {
         "mode": "any",
         "patterns": [
-          {
-            "type": "regex",
-            "value": "(?i)new\\s+TrustManager\\s*\\(\\s*\\)\\s*\\{[^}]*\\}",
-            "confidence": 0.85
-          },
           {
             "type": "regex",
             "value": "(?i)ALLOW_ALL_HOSTNAME_VERIFIER",
@@ -1694,7 +1553,7 @@
       "severity": "P1",
       "action": "warn",
       "priority": "P2",
-      "detection_method": "regex",
+      "detection_method": "regex (Python checker pending)",
       "fp_risk": "中",
       "performance": "低",
       "target_files": [
@@ -1711,18 +1570,8 @@
         "patterns": [
           {
             "type": "regex",
-            "value": "(?i)/actuator\\s*",
+            "value": "(?i)/actuator",
             "confidence": 0.5
-          },
-          {
-            "type": "regex",
-            "value": "(?i)/metrics\\s*",
-            "confidence": 0.4
-          },
-          {
-            "type": "regex",
-            "value": "(?i)span\\.setAttribute.*['\\\"](?:sql|query|body|password)",
-            "confidence": 0.6
           }
         ]
       }
@@ -1858,7 +1707,7 @@
       "severity": "P0",
       "action": "warn",
       "priority": "P2",
-      "detection_method": "regex",
+      "detection_method": "regex (Python checker pending)",
       "fp_risk": "低",
       "performance": "低",
       "target_files": [
@@ -1874,11 +1723,6 @@
             "type": "regex",
             "value": "(?i)setJavaScriptEnabled\\s*\\(\\s*true\\s*\\)",
             "confidence": 0.75
-          },
-          {
-            "type": "regex",
-            "value": "(?i)setAllowFileAccess\\s*\\(\\s*true\\s*\\)",
-            "confidence": 0.7
           }
         ]
       }
@@ -1891,7 +1735,7 @@
       "severity": "P1",
       "action": "warn",
       "priority": "P2",
-      "detection_method": "regex",
+      "detection_method": "regex (Python checker pending)",
       "fp_risk": "低",
       "performance": "低",
       "target_files": [
@@ -1907,11 +1751,6 @@
             "type": "regex",
             "value": "(?i)SharedPreferences\\.(?:putString|getString)\\s*\\(\\s*['\\\"](?:token|password|secret|api_key)",
             "confidence": 0.7
-          },
-          {
-            "type": "regex",
-            "value": "(?i)UserDefaults\\.(?:set|object)\\s*\\(\\s*['\\\"](?:token|password|secret)",
-            "confidence": 0.7
           }
         ]
       }
@@ -1924,7 +1763,7 @@
       "severity": "P1",
       "action": "warn",
       "priority": "P2",
-      "detection_method": "regex",
+      "detection_method": "regex (Python checker pending)",
       "fp_risk": "中",
       "performance": "低",
       "target_files": [
@@ -1940,11 +1779,6 @@
           {
             "type": "regex",
             "value": "android:exported\\s*=\\s*\\\"true\\\"",
-            "confidence": 0.5
-          },
-          {
-            "type": "regex",
-            "value": "CFBundleURLSchemes",
             "confidence": 0.5
           }
         ]
@@ -1983,7 +1817,7 @@
       "severity": "P1",
       "action": "warn",
       "priority": "P2",
-      "detection_method": "regex",
+      "detection_method": "regex (Python checker pending)",
       "fp_risk": "低",
       "performance": "低",
       "target_files": [
@@ -1997,7 +1831,7 @@
         "patterns": [
           {
             "type": "regex",
-            "value": "(?i)CertificatePinner|ServerTrustManager|SSL pinning",
+            "value": "(?i)CertificatePinner|ServerTrustManager|ssl.?pinning",
             "confidence": 0.5
           }
         ]
@@ -2037,7 +1871,7 @@
       "severity": "P2",
       "action": "warn",
       "priority": "P2",
-      "detection_method": "regex",
+      "detection_method": "regex (Python checker pending)",
       "fp_risk": "中",
       "performance": "低",
       "target_files": [

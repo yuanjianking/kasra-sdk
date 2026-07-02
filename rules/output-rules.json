@@ -19,83 +19,7 @@
       ],
       "detection": {
         "mode": "any",
-        "patterns": [
-          {
-            "type": "regex",
-            "value": "\\b(?:eval|exec)\\s*\\(",
-            "confidence": 0.8
-          },
-          {
-            "type": "regex",
-            "value": "\\b(?:system|popen|__import__)\\s*\\(",
-            "confidence": 0.8
-          },
-          {
-            "type": "regex",
-            "value": "subprocess\\.(?:call|Popen|run)\\s*\\(",
-            "confidence": 0.85
-          },
-          {
-            "type": "regex",
-            "value": "Runtime\\.getRuntime\\(\\)\\.exec\\s*\\(",
-            "confidence": 0.85
-          },
-          {
-            "type": "regex",
-            "value": "new\\s+ProcessBuilder\\s*\\(",
-            "confidence": 0.75
-          },
-          {
-            "type": "regex",
-            "value": "Class\\.forName\\s*\\(",
-            "confidence": 0.6
-          },
-          {
-            "type": "regex",
-            "value": "Process\\.Start\\s*\\(",
-            "confidence": 0.85
-          },
-          {
-            "type": "regex",
-            "value": "exec\\.Command\\s*\\(",
-            "confidence": 0.85
-          },
-          {
-            "type": "regex",
-            "value": "os\\.StartProcess\\s*\\(",
-            "confidence": 0.7
-          },
-          {
-            "type": "regex",
-            "value": "\\bassert\\s*\\(\\s*\\$",
-            "confidence": 0.6
-          },
-          {
-            "type": "regex",
-            "value": "(?:shell_exec|exec|system)\\s*\\(\\s*\\$",
-            "confidence": 0.7
-          },
-          {
-            "type": "regex",
-            "value": "\\bcreate_function\\s*\\(",
-            "confidence": 0.7
-          },
-          {
-            "type": "regex",
-            "value": "std::process::Command",
-            "confidence": 0.85
-          },
-          {
-            "type": "regex",
-            "value": "Command::new\\s*\\(\\s*[\"']sh[\"']\\s*\\)",
-            "confidence": 0.8
-          },
-          {
-            "type": "regex",
-            "value": "new\\s+Function\\s*\\(\\s*[\"']",
-            "confidence": 0.7
-          }
-        ],
+        "patterns": [],
         "languages": [
           "python",
           "javascript",
@@ -118,7 +42,8 @@
         "scopes": [
           "output"
         ]
-      }
+      },
+      "detection_method": "Python checker + Semgrep (regex fallback removed)"
     },
     {
       "id": "O-02",
@@ -132,60 +57,15 @@
       ],
       "detection": {
         "mode": "any",
-        "patterns": [
-          {
-            "type": "regex",
-            "value": "rm\\s+(?:-rf|\\/|\\-rf\\s+\\/|\\-rf\\s+\\/\\*)",
-            "confidence": 0.9
-          },
-          {
-            "type": "regex",
-            "value": ":\\s*\\(\\s*\\)\\s*\\{\\s*:\\s*\\|\\s*:\\s*&\\s*\\}\\s*;\\s*:",
-            "confidence": 0.95
-          },
-          {
-            "type": "regex",
-            "value": "dd\\s+if=\\s*\\/dev\\/zero\\s+of=\\s*\\/dev\\/sd",
-            "confidence": 0.95
-          },
-          {
-            "type": "regex",
-            "value": "\\bmkfs\\.\\w+\\s+\\/dev\\/",
-            "confidence": 0.9
-          },
-          {
-            "type": "regex",
-            "value": "chmod\\s+-R\\s+777\\s+\\/",
-            "confidence": 0.9
-          },
-          {
-            "type": "regex",
-            "value": "chown\\s+.*\\s+\\/(?:etc|usr|bin|boot|root)",
-            "confidence": 0.7
-          },
-          {
-            "type": "regex",
-            "value": "mv\\s+\\/\\s+\\/dev\\/null",
-            "confidence": 0.9
-          },
-          {
-            "type": "regex",
-            "value": "shutdown\\s+(?:\\-h\\s+now|\\-r\\s+now|/s)",
-            "confidence": 0.7
-          },
-          {
-            "type": "regex",
-            "value": "sysctl\\s+\\-w\\s+net\\.ipv4\\.ip_forward\\s*=\\s*1",
-            "confidence": 0.7
-          }
-        ]
+        "patterns": []
       },
       "config": {
         "max_matches": 10,
         "scopes": [
           "output"
         ]
-      }
+      },
+      "detection_method": "Python checker + Semgrep (regex fallback removed)"
     },
     {
       "id": "O-03",
@@ -199,43 +79,7 @@
       ],
       "detection": {
         "mode": "any",
-        "patterns": [
-          {
-            "type": "regex",
-            "value": "subprocess\\.(?:call|Popen|run)\\s*\\([^)]*\\+\\s+[^)]*shell=True",
-            "confidence": 0.85
-          },
-          {
-            "type": "regex",
-            "value": "exec\\.Command\\s*\\(\\s*[\"']sh[\"']\\s*,\\s*[\"']-c[\"']\\s*,\\s*[^)]+",
-            "confidence": 0.85
-          },
-          {
-            "type": "regex",
-            "value": "Runtime\\.getRuntime\\(\\)\\.exec\\s*\\(\\s*[\\\"'](?:(?:ping|nslookup|traceroute)\\s+[\\\"']\\s*\\+\\s*[A-Za-z_])",
-            "confidence": 0.85
-          },
-          {
-            "type": "regex",
-            "value": "`[^`]*\\#\\{?[A-Za-z_][A-Za-z0-9_]*\\}?[^`]*`",
-            "confidence": 0.5
-          },
-          {
-            "type": "regex",
-            "value": "shell_exec\\s*\\(\\s*[\"'][^\"']*\\${1,2}[A-Za-z_]",
-            "confidence": 0.7
-          },
-          {
-            "type": "regex",
-            "value": "ProcessBuilder\\s*\\([^)]*\\).*start\\(\\)",
-            "confidence": 0.6
-          },
-          {
-            "type": "regex",
-            "value": "\\bexec\\s*\\(\\s*[\"'][^\"']+\\+[^\"']+[\"']\\s*\\)",
-            "confidence": 0.85
-          }
-        ],
+        "patterns": [],
         "languages": [
           "python",
           "javascript",
@@ -251,7 +95,8 @@
         "scopes": [
           "output"
         ]
-      }
+      },
+      "detection_method": "Python checker + Semgrep (regex fallback removed)"
     },
     {
       "id": "O-04",
@@ -265,43 +110,7 @@
       ],
       "detection": {
         "mode": "any",
-        "patterns": [
-          {
-            "type": "regex",
-            "value": "cursor\\.execute\\s*\\(\\s*(?:f[\\\"']|[\\\"'][^\\\"']*\\+[^\\\"']*[\\\"']|[^)]*%\\s*\\()",
-            "confidence": 0.7
-          },
-          {
-            "type": "regex",
-            "value": "\\b(?:SELECT|INSERT\\s+INTO|UPDATE|DELETE\\s+FROM)\\b[^;]*\\+\\s*(?:[A-Za-z_][A-Za-z0-9_]*|[A-Za-z_][A-Za-z0-9_]*\\s*\\+\\s*[\\\"'])",
-            "confidence": 0.5
-          },
-          {
-            "type": "regex",
-            "value": "\\b(?:psycopg2|pymysql|sqlite3)\\.connect[^)]*\\)[\\s\\S]{0,100}?execute\\s*\\(\\s*(?:f[\\\"']|[\\\"'][^\\\"']*\\+|%\\s*\\()",
-            "confidence": 0.7
-          },
-          {
-            "type": "regex",
-            "value": "fmt\\.Sprintf\\s*\\(\\s*[\\\"'](?:SELECT|INSERT|UPDATE|DELETE)",
-            "confidence": 0.7
-          },
-          {
-            "type": "regex",
-            "value": "\\b(?:query|sql)\\s*(?::|=)\\s*[\"'][^\"']*\\{[^}]+\\}",
-            "confidence": 0.6
-          },
-          {
-            "type": "regex",
-            "value": "new\\s+Statement\\s*\\(|createStatement\\s*\\(|prepareStatement\\s*\\([^)]*\\+",
-            "confidence": 0.6
-          },
-          {
-            "type": "regex",
-            "value": "SqlCommand\\s*\\(\\s*[\"'][^\"']*\\+",
-            "confidence": 0.65
-          }
-        ],
+        "patterns": [],
         "languages": [
           "python",
           "javascript",
@@ -318,7 +127,8 @@
         "scopes": [
           "output"
         ]
-      }
+      },
+      "detection_method": "Python checker + Semgrep (regex fallback removed)"
     },
     {
       "id": "O-05",
@@ -332,38 +142,7 @@
       ],
       "detection": {
         "mode": "any",
-        "patterns": [
-          {
-            "type": "regex",
-            "value": "\\$where\\s*[:=]\\s*[\"'][^\"']*\\{?[A-Za-z_]",
-            "confidence": 0.75
-          },
-          {
-            "type": "regex",
-            "value": "\\$where\\s*[:=]\\s*[\"']\\s*this\\.[^\"']+[\"']",
-            "confidence": 0.6
-          },
-          {
-            "type": "regex",
-            "value": "find\\s*\\(\\s*\\{[^}]*\\$where",
-            "confidence": 0.7
-          },
-          {
-            "type": "regex",
-            "value": "N1QLQuery\\s*\\(\\s*[\"'][^\"']*\\+[A-Za-z_]",
-            "confidence": 0.65
-          },
-          {
-            "type": "regex",
-            "value": "findByIdAnd(?:Update|Delete)\\s*\\(\\s*[A-Za-z_][A-Za-z0-9_]*\\s*,",
-            "confidence": 0.4
-          },
-          {
-            "type": "regex",
-            "value": "\\b(?:mongodb|mongoose)\\.(?:connect|model)\\s*\\([^)]*\\{",
-            "confidence": 0.5
-          }
-        ],
+        "patterns": [],
         "languages": [
           "python",
           "javascript",
@@ -375,7 +154,8 @@
         "scopes": [
           "output"
         ]
-      }
+      },
+      "detection_method": "Python checker + Semgrep (regex fallback removed)"
     },
     {
       "id": "O-06",
@@ -389,38 +169,7 @@
       ],
       "detection": {
         "mode": "any",
-        "patterns": [
-          {
-            "type": "regex",
-            "value": "except\\s*(?:[A-Za-z_][A-Za-z0-9_]*)?\\s*:\\s*\\n\\s*pass\\b",
-            "confidence": 0.85
-          },
-          {
-            "type": "regex",
-            "value": "catch\\s*\\(\\s*(?:[A-Za-z_][A-Za-z0-9_]*|\\w+\\s+\\w+)?\\s*\\)\\s*\\{\\s*\\}",
-            "confidence": 0.75
-          },
-          {
-            "type": "regex",
-            "value": "catch\\s*\\(\\s*(?:_|[A-Za-z_][A-Za-z0-9_]*)\\s*\\)\\s*\\{\\s*\\n\\s*\\}",
-            "confidence": 0.7
-          },
-          {
-            "type": "regex",
-            "value": "if\\s+err\\s+!=\\s+nil\\s*\\{\\s*\\n\\s*return\\b",
-            "confidence": 0.65
-          },
-          {
-            "type": "regex",
-            "value": "\\/\\/\\s*(?:swallow|ignore|silently|nothing|suppress)\\s*(?:error|exception)?",
-            "confidence": 0.6
-          },
-          {
-            "type": "regex",
-            "value": "catch\\s+\\{\\s*\\}",
-            "confidence": 0.7
-          }
-        ],
+        "patterns": [],
         "languages": [
           "python",
           "javascript",
@@ -441,7 +190,8 @@
         "scopes": [
           "output"
         ]
-      }
+      },
+      "detection_method": "Python checker + Semgrep (regex fallback removed)"
     },
     {
       "id": "O-07",
@@ -455,48 +205,7 @@
       ],
       "detection": {
         "mode": "any",
-        "patterns": [
-          {
-            "type": "regex",
-            "value": "^import\\s+random$|^from\\s+random\\s+import",
-            "confidence": 0.5
-          },
-          {
-            "type": "regex",
-            "value": "Math\\.random\\s*\\(\\s*\\)",
-            "confidence": 0.5
-          },
-          {
-            "type": "regex",
-            "value": "java\\.util\\.Random\\b",
-            "confidence": 0.6
-          },
-          {
-            "type": "regex",
-            "value": "new\\s+Random\\s*\\(\\s*\\)",
-            "confidence": 0.4
-          },
-          {
-            "type": "regex",
-            "value": "\\brand\\s*\\(\\s*\\)|\\bmt_rand\\s*\\(\\s*\\)",
-            "confidence": 0.5
-          },
-          {
-            "type": "regex",
-            "value": "math/rand\"|\"math/rand",
-            "confidence": 0.5
-          },
-          {
-            "type": "regex",
-            "value": "\\brand\\s*\\(\\s*\\d|\\brand\\.(?:randint|choice|sample|shuffle|random|uniform|gauss)",
-            "confidence": 0.5
-          },
-          {
-            "type": "keyword",
-            "value": "import random",
-            "confidence": 0.5
-          }
-        ],
+        "patterns": [],
         "languages": [
           "python",
           "javascript",
@@ -515,7 +224,8 @@
         "scopes": [
           "output"
         ]
-      }
+      },
+      "detection_method": "Python checker + Semgrep (regex fallback removed)"
     },
     {
       "id": "O-08",
@@ -529,33 +239,7 @@
       ],
       "detection": {
         "mode": "any",
-        "patterns": [
-          {
-            "type": "regex",
-            "value": "\\b(?:etree|lxml)\\.(?:fromstring|parse|XML)\\s*\\([^)]*\\bresolve_entities\\s*(?:!=|!=\\s*False|=|==\\s*True)",
-            "confidence": 0.7
-          },
-          {
-            "type": "regex",
-            "value": "DocumentBuilderFactory\\.newInstance\\(\\)[^;]*setFeature\\s*\\(\\s*[\"\\']http:\\/\\/apache\\.org\\/xml\\/features\\/[^\"\\']*xxe",
-            "confidence": 0.7
-          },
-          {
-            "type": "regex",
-            "value": "simplexml_load_string\\s*\\(",
-            "confidence": 0.6
-          },
-          {
-            "type": "regex",
-            "value": "new\\s+XmlDocument\\s*\\([^)]*\\)\\s*\\{[^}]*\\bXmlResolver\\s*=\\s*null",
-            "confidence": 0.5
-          },
-          {
-            "type": "regex",
-            "value": "xml\\.Decoder\\s*\\{[^}]*\\bStrict\\s*=\\s*false",
-            "confidence": 0.65
-          }
-        ],
+        "patterns": [],
         "languages": [
           "python",
           "java",
@@ -571,7 +255,8 @@
         "scopes": [
           "output"
         ]
-      }
+      },
+      "detection_method": "Python checker + Semgrep (regex fallback removed)"
     },
     {
       "id": "O-09",
@@ -585,43 +270,7 @@
       ],
       "detection": {
         "mode": "any",
-        "patterns": [
-          {
-            "type": "regex",
-            "value": "render_template_string\\s*\\(\\s*[\"'][^\"']*\\+[A-Za-z_]",
-            "confidence": 0.75
-          },
-          {
-            "type": "regex",
-            "value": "render_template_string\\s*\\(\\s*(?:f[\"']|[\"'][^\"']*\\{[^}]+\\})",
-            "confidence": 0.7
-          },
-          {
-            "type": "regex",
-            "value": "Template\\s*\\(\\s*[\"'][^\"']*\\+[^\"']+[\"']\\s*\\)\\s*\\.render",
-            "confidence": 0.7
-          },
-          {
-            "type": "regex",
-            "value": "new\\s+Template\\s*\\(\\s*[\"'][^\"']*\\{[^}]+\\}",
-            "confidence": 0.65
-          },
-          {
-            "type": "regex",
-            "value": "Handlebars\\.compile\\s*\\(\\s*[A-Za-z_]\\w*\\s*\\+\\s*",
-            "confidence": 0.7
-          },
-          {
-            "type": "regex",
-            "value": "freemarker\\.template\\..*Template\\s*\\(\\s*[\"'][^\"']*\\+",
-            "confidence": 0.7
-          },
-          {
-            "type": "regex",
-            "value": "\\$smarty\\.fetch\\s*\\(\\s*[\"'][^\"']*\\$",
-            "confidence": 0.65
-          }
-        ],
+        "patterns": [],
         "languages": [
           "python",
           "javascript",
@@ -636,7 +285,8 @@
         "scopes": [
           "output"
         ]
-      }
+      },
+      "detection_method": "Python checker + Semgrep (regex fallback removed)"
     },
     {
       "id": "O-10",
@@ -650,23 +300,7 @@
       ],
       "detection": {
         "mode": "any",
-        "patterns": [
-          {
-            "type": "regex",
-            "value": "[\"'][^\"']*\\b(?:uid|cn|sn|mail)\\s*=\\s*[\"']\\s*\\+\\s*[A-Za-z_][A-Za-z0-9_]*",
-            "confidence": 0.7
-          },
-          {
-            "type": "regex",
-            "value": "DirContext\\.(?:search|lookup|list)\\s*\\(\\s*[\"'][^\"']*\\+\\s*[A-Za-z_]",
-            "confidence": 0.7
-          },
-          {
-            "type": "regex",
-            "value": "InitialDirContext\\.(?:search|lookup)\\s*\\([^)]*\\+\\s*[A-Za-z_]",
-            "confidence": 0.65
-          }
-        ],
+        "patterns": [],
         "languages": [
           "java",
           "python",
@@ -679,7 +313,8 @@
         "scopes": [
           "output"
         ]
-      }
+      },
+      "detection_method": "Python checker + Semgrep (regex fallback removed)"
     },
     {
       "id": "O-11",
@@ -693,43 +328,7 @@
       ],
       "detection": {
         "mode": "any",
-        "patterns": [
-          {
-            "type": "regex",
-            "value": "(?:pickle\\.(?:loads|load)|shelve\\.open)\\s*\\(",
-            "confidence": 0.8
-          },
-          {
-            "type": "regex",
-            "value": "yaml\\.(?:load|load_all)\\s*\\([^)]*\\b(?!SafeLoader|CSafeloader)",
-            "confidence": 0.7
-          },
-          {
-            "type": "regex",
-            "value": "ObjectInputStream\\.(?:readObject|readUnshared)\\s*\\(",
-            "confidence": 0.8
-          },
-          {
-            "type": "regex",
-            "value": "\\bunserialize\\s*\\(\\s*\\$",
-            "confidence": 0.7
-          },
-          {
-            "type": "regex",
-            "value": "Marshal\\.(?:load|restore)\\s*\\(",
-            "confidence": 0.8
-          },
-          {
-            "type": "regex",
-            "value": "new\\s+BinaryFormatter\\s*\\([^)]*\\).*\\.Deserialize\\s*\\(",
-            "confidence": 0.75
-          },
-          {
-            "type": "regex",
-            "value": "new\\s+SoapFormatter\\s*\\([^)]*\\).*\\.Deserialize\\s*\\(",
-            "confidence": 0.75
-          }
-        ],
+        "patterns": [],
         "languages": [
           "python",
           "java",
@@ -744,7 +343,8 @@
         "scopes": [
           "output"
         ]
-      }
+      },
+      "detection_method": "Python checker + Semgrep (regex fallback removed)"
     },
     {
       "id": "O-12",
@@ -758,38 +358,7 @@
       ],
       "detection": {
         "mode": "any",
-        "patterns": [
-          {
-            "type": "regex",
-            "value": "requests\\.(?:get|post|put|delete|patch|request)\\s*\\(\\s*[A-Za-z_][A-Za-z0-9_]*\\s*[,)]",
-            "confidence": 0.6
-          },
-          {
-            "type": "regex",
-            "value": "axios\\.(?:get|post|put|delete|patch|request)\\s*\\(\\s*[A-Za-z_][A-Za-z0-9_]*\\s*[,)]",
-            "confidence": 0.6
-          },
-          {
-            "type": "regex",
-            "value": "fetch\\s*\\(\\s*[A-Za-z_][A-Za-z0-9_]*\\s*[,)]",
-            "confidence": 0.5
-          },
-          {
-            "type": "regex",
-            "value": "HttpClient\\.(?:execute|SendAsync)\\s*\\(\\s*[A-Za-z_]",
-            "confidence": 0.5
-          },
-          {
-            "type": "regex",
-            "value": "url\\s*[+]=?\\s*[A-Za-z_][A-Za-z0-9_]*[\\s\\S]{0,50}requests\\.",
-            "confidence": 0.5
-          },
-          {
-            "type": "regex",
-            "value": "open-uri\\s*\\(\\s*[A-Za-z_][A-Za-z0-9_]*",
-            "confidence": 0.6
-          }
-        ],
+        "patterns": [],
         "languages": [
           "python",
           "javascript",
@@ -806,7 +375,8 @@
         "scopes": [
           "output"
         ]
-      }
+      },
+      "detection_method": "Python checker + Semgrep (regex fallback removed)"
     },
     {
       "id": "O-13",
@@ -820,43 +390,7 @@
       ],
       "detection": {
         "mode": "any",
-        "patterns": [
-          {
-            "type": "regex",
-            "value": "verify\\s*=\\s*(?:False|false|0|'False'|\\\"False\\\")",
-            "confidence": 0.8
-          },
-          {
-            "type": "regex",
-            "value": "check_hostname\\s*=\\s*(?:False|false)",
-            "confidence": 0.75
-          },
-          {
-            "type": "regex",
-            "value": "(?:rejectUnauthorized|NODE_TLS_REJECT_UNAUTHORIZED)\\s*[:=]\\s*(?:false|0)",
-            "confidence": 0.4
-          },
-          {
-            "type": "regex",
-            "value": "InsecureSkipVerify\\s*[:=]\\s*(?:true|True)",
-            "confidence": 0.85
-          },
-          {
-            "type": "regex",
-            "value": "ServerCertificateValidationCallback\\s*[:=]\\s*\\{[^}]*true\\s*\\}",
-            "confidence": 0.75
-          },
-          {
-            "type": "regex",
-            "value": "VERIFY_NONE",
-            "confidence": 0.7
-          },
-          {
-            "type": "regex",
-            "value": "trustAllCertificates|trust_all_certs|trust-all-certs",
-            "confidence": 0.7
-          }
-        ],
+        "patterns": [],
         "languages": [
           "python",
           "javascript",
@@ -872,7 +406,8 @@
         "scopes": [
           "output"
         ]
-      }
+      },
+      "detection_method": "Python checker + Semgrep (regex fallback removed)"
     },
     {
       "id": "O-14",
@@ -886,38 +421,7 @@
       ],
       "detection": {
         "mode": "any",
-        "patterns": [
-          {
-            "type": "regex",
-            "value": "_\\.(?:merge|mergeWith|defaults|defaultsDeep|assign)\\s*\\([^)]*\\bbody\\b",
-            "confidence": 0.7
-          },
-          {
-            "type": "regex",
-            "value": "Object\\.(?:assign|create)\\s*\\(\\s*[A-Za-z_][A-Za-z0-9_]*\\s*,\\s*[A-Za-z_]\\w*\\b(?:body|input|query|param|user)",
-            "confidence": 0.65
-          },
-          {
-            "type": "regex",
-            "value": "\\[\\s*[\"']__proto__[\"']\\s*\\]",
-            "confidence": 0.85
-          },
-          {
-            "type": "regex",
-            "value": "\\[\\s*[\"']constructor[\"']\\s*\\]\\s*\\[\\s*[\"']prototype[\"']\\s*\\]",
-            "confidence": 0.85
-          },
-          {
-            "type": "regex",
-            "value": "\\b__proto__\\b",
-            "confidence": 0.6
-          },
-          {
-            "type": "regex",
-            "value": "\\.merge\\s*\\(\\s*\\{\\s*\\}\\s*,\\s*\\w+\\b(?:body|input|query|user|data)",
-            "confidence": 0.65
-          }
-        ],
+        "patterns": [],
         "languages": [
           "javascript",
           "typescript"
@@ -928,7 +432,8 @@
         "scopes": [
           "output"
         ]
-      }
+      },
+      "detection_method": "Python checker + Semgrep (regex fallback removed)"
     },
     {
       "id": "O-15",
@@ -942,28 +447,7 @@
       ],
       "detection": {
         "mode": "any",
-        "patterns": [
-          {
-            "type": "regex",
-            "value": "(?:open|os\\.path\\.join)\\s*\\([^)]*[A-Za-z_]\\w*\\s*\\+\\s*[A-Za-z_]\\w*",
-            "confidence": 0.5
-          },
-          {
-            "type": "regex",
-            "value": "Path\\.Combine\\s*\\([^)]*\\b(?:input|user|file|name|path|fileName|filename|dir)",
-            "confidence": 0.65
-          },
-          {
-            "type": "regex",
-            "value": "new\\s+File\\s*\\(\\s*[A-Za-z_]\\w*\\s*\\+\\s*[A-Za-z_]",
-            "confidence": 0.5
-          },
-          {
-            "type": "regex",
-            "value": "os\\.path\\.join\\s*\\(\\s*(?:base|dir|root|path|folder|directory|upload|prefix)\\s*,\\s*\\w+\\b(?:name|file|input|user)",
-            "confidence": 0.65
-          }
-        ],
+        "patterns": [],
         "languages": [
           "python",
           "javascript",
@@ -982,7 +466,8 @@
         "scopes": [
           "output"
         ]
-      }
+      },
+      "detection_method": "Python checker + Semgrep (regex fallback removed)"
     },
     {
       "id": "O-16",
@@ -996,28 +481,7 @@
       ],
       "detection": {
         "mode": "any",
-        "patterns": [
-          {
-            "type": "regex",
-            "value": "\\([^()]+\\+\\)\\+",
-            "confidence": 0.6
-          },
-          {
-            "type": "regex",
-            "value": "\\([^()]+\\+\\)\\*",
-            "confidence": 0.6
-          },
-          {
-            "type": "regex",
-            "value": "\\([^()]+\\*\\)\\+",
-            "confidence": 0.6
-          },
-          {
-            "type": "regex",
-            "value": "\\([^()]+\\*\\)\\*",
-            "confidence": 0.6
-          }
-        ],
+        "patterns": [],
         "languages": [
           "python",
           "javascript",
@@ -1036,7 +500,8 @@
         "scopes": [
           "output"
         ]
-      }
+      },
+      "detection_method": "Python checker + Semgrep (regex fallback removed)"
     },
     {
       "id": "O-17",
@@ -1050,43 +515,7 @@
       ],
       "detection": {
         "mode": "any",
-        "patterns": [
-          {
-            "type": "regex",
-            "value": "innerHTML\\s*=\\s*[A-Za-z_]\\w*\\s*[+;]",
-            "confidence": 0.65
-          },
-          {
-            "type": "regex",
-            "value": "outerHTML\\s*=\\s*[A-Za-z_]",
-            "confidence": 0.6
-          },
-          {
-            "type": "regex",
-            "value": "document\\.write\\s*\\(\\s*[A-Za-z_]",
-            "confidence": 0.6
-          },
-          {
-            "type": "regex",
-            "value": "dangerouslySetInnerHTML\\s*=\\s*\\{\\s*__html",
-            "confidence": 0.7
-          },
-          {
-            "type": "regex",
-            "value": "v-html\\s*=\\s*[\"']\\s*[A-Za-z_]",
-            "confidence": 0.65
-          },
-          {
-            "type": "regex",
-            "value": "href\\s*=\\s*[\"'][\\s]*javascript:",
-            "confidence": 0.8
-          },
-          {
-            "type": "regex",
-            "value": "window\\.location\\s*=\\s*\\w+\\b(?:input|user|param|query|data)",
-            "confidence": 0.6
-          }
-        ],
+        "patterns": [],
         "languages": [
           "javascript",
           "typescript",
@@ -1098,7 +527,8 @@
         "scopes": [
           "output"
         ]
-      }
+      },
+      "detection_method": "Python checker + Semgrep (regex fallback removed)"
     },
     {
       "id": "O-18",
@@ -1171,7 +601,8 @@
         "scopes": [
           "output"
         ]
-      }
+      },
+      "detection_method": "regex"
     },
     {
       "id": "O-19",
@@ -1213,7 +644,8 @@
         "scopes": [
           "output"
         ]
-      }
+      },
+      "detection_method": "regex"
     },
     {
       "id": "O-20",
@@ -1275,7 +707,8 @@
         "scopes": [
           "output"
         ]
-      }
+      },
+      "detection_method": "regex"
     },
     {
       "id": "O-21",
@@ -1372,7 +805,8 @@
         "scopes": [
           "output"
         ]
-      }
+      },
+      "detection_method": "regex"
     },
     {
       "id": "O-22",
@@ -1435,7 +869,8 @@
           "output"
         ],
         "admin_alert": true
-      }
+      },
+      "detection_method": "regex"
     },
     {
       "id": "O-23",
@@ -1492,7 +927,8 @@
         "scopes": [
           "output"
         ]
-      }
+      },
+      "detection_method": "regex"
     },
     {
       "id": "O-24",
@@ -1534,7 +970,8 @@
         "scopes": [
           "output"
         ]
-      }
+      },
+      "detection_method": "regex"
     },
     {
       "id": "O-25",
@@ -1576,7 +1013,8 @@
         "scopes": [
           "output"
         ]
-      }
+      },
+      "detection_method": "regex"
     },
     {
       "id": "O-26",
@@ -1618,7 +1056,8 @@
         "scopes": [
           "output"
         ]
-      }
+      },
+      "detection_method": "regex"
     },
     {
       "id": "O-27",
@@ -1655,7 +1094,8 @@
         "scopes": [
           "output"
         ]
-      }
+      },
+      "detection_method": "regex"
     },
     {
       "id": "O-28",
@@ -1711,7 +1151,8 @@
         "scopes": [
           "output"
         ]
-      }
+      },
+      "detection_method": "regex"
     },
     {
       "id": "O-29",
@@ -1748,7 +1189,8 @@
         "scopes": [
           "output"
         ]
-      }
+      },
+      "detection_method": "regex"
     },
     {
       "id": "O-30",
@@ -1790,7 +1232,8 @@
         "scopes": [
           "output"
         ]
-      }
+      },
+      "detection_method": "regex"
     },
     {
       "id": "O-31",
@@ -1828,7 +1271,8 @@
           "output"
         ],
         "admin_alert": true
-      }
+      },
+      "detection_method": "regex"
     },
     {
       "id": "O-32",
@@ -1875,7 +1319,8 @@
         "scopes": [
           "output"
         ]
-      }
+      },
+      "detection_method": "regex"
     },
     {
       "id": "O-33",
@@ -1907,7 +1352,8 @@
         "scopes": [
           "output"
         ]
-      }
+      },
+      "detection_method": "regex"
     },
     {
       "id": "O-34",
@@ -1944,7 +1390,8 @@
         "scopes": [
           "output"
         ]
-      }
+      },
+      "detection_method": "regex"
     },
     {
       "id": "O-35",
@@ -1981,7 +1428,8 @@
         "scopes": [
           "output"
         ]
-      }
+      },
+      "detection_method": "regex"
     },
     {
       "id": "O-36",
@@ -2013,7 +1461,8 @@
         "scopes": [
           "output"
         ]
-      }
+      },
+      "detection_method": "regex"
     },
     {
       "id": "O-37",
@@ -2045,7 +1494,8 @@
         "scopes": [
           "output"
         ]
-      }
+      },
+      "detection_method": "regex"
     },
     {
       "id": "O-38",
@@ -2088,7 +1538,8 @@
           "output"
         ],
         "admin_alert": true
-      }
+      },
+      "detection_method": "regex"
     },
     {
       "id": "O-39",
@@ -2146,7 +1597,8 @@
           "output"
         ],
         "admin_alert": true
-      }
+      },
+      "detection_method": "regex"
     },
     {
       "id": "O-40",
@@ -2183,7 +1635,8 @@
         "scopes": [
           "output"
         ]
-      }
+      },
+      "detection_method": "regex"
     },
     {
       "id": "O-41",
@@ -2276,7 +1729,8 @@
           "output"
         ],
         "redact_template": "[PII_REDACTED]"
-      }
+      },
+      "detection_method": "regex"
     },
     {
       "id": "O-42",
@@ -2308,7 +1762,8 @@
         "scopes": [
           "output"
         ]
-      }
+      },
+      "detection_method": "regex"
     },
     {
       "id": "O-43",
@@ -2355,7 +1810,8 @@
         "scopes": [
           "output"
         ]
-      }
+      },
+      "detection_method": "regex"
     },
     {
       "id": "O-44",
@@ -2387,7 +1843,8 @@
         "scopes": [
           "output"
         ]
-      }
+      },
+      "detection_method": "regex"
     },
     {
       "id": "O-45",
@@ -2419,7 +1876,8 @@
         "scopes": [
           "output"
         ]
-      }
+      },
+      "detection_method": "regex"
     },
     {
       "id": "O-46",
@@ -2471,7 +1929,8 @@
         "scopes": [
           "output"
         ]
-      }
+      },
+      "detection_method": "regex"
     },
     {
       "id": "O-47",
@@ -2543,7 +2002,8 @@
         "scopes": [
           "output"
         ]
-      }
+      },
+      "detection_method": "regex"
     },
     {
       "id": "O-48",
@@ -2584,7 +2044,8 @@
         "scopes": [
           "output"
         ]
-      }
+      },
+      "detection_method": "regex"
     },
     {
       "id": "O-49",
@@ -2633,7 +2094,8 @@
         "scopes": [
           "output"
         ]
-      }
+      },
+      "detection_method": "regex"
     },
     {
       "id": "O-50",
@@ -2687,7 +2149,8 @@
         "scopes": [
           "output"
         ]
-      }
+      },
+      "detection_method": "regex"
     },
     {
       "id": "O-51",
@@ -2710,7 +2173,8 @@
         ],
         "no_pattern_match": true,
         "audit_log": true
-      }
+      },
+      "detection_method": "regex"
     },
     {
       "id": "O-52",
@@ -2772,7 +2236,8 @@
           ],
           "audit_field": "sensitive_ops"
         }
-      }
+      },
+      "detection_method": "regex"
     },
     {
       "id": "O-53",
@@ -2829,7 +2294,8 @@
           ],
           "audit_field": "data_erasure"
         }
-      }
+      },
+      "detection_method": "regex"
     }
   ]
 }

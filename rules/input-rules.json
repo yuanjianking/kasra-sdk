@@ -43,7 +43,8 @@
           "input",
           "batch"
         ]
-      }
+      },
+      "detection_method": "regex + keyword"
     },
     {
       "id": "I-02",
@@ -81,7 +82,8 @@
           "input",
           "batch"
         ]
-      }
+      },
+      "detection_method": "regex + keyword"
     },
     {
       "id": "I-03",
@@ -109,7 +111,8 @@
           "input",
           "batch"
         ]
-      }
+      },
+      "detection_method": "regex + keyword"
     },
     {
       "id": "I-04",
@@ -162,7 +165,8 @@
           "input",
           "batch"
         ]
-      }
+      },
+      "detection_method": "regex + keyword"
     },
     {
       "id": "I-05",
@@ -270,7 +274,8 @@
           "input",
           "batch"
         ]
-      }
+      },
+      "detection_method": "regex + keyword"
     },
     {
       "id": "I-06",
@@ -319,7 +324,8 @@
           "input",
           "batch"
         ]
-      }
+      },
+      "detection_method": "regex + keyword"
     },
     {
       "id": "I-07",
@@ -357,7 +363,8 @@
           "input",
           "batch"
         ]
-      }
+      },
+      "detection_method": "regex + keyword"
     },
     {
       "id": "I-08",
@@ -390,7 +397,8 @@
           "input",
           "batch"
         ]
-      }
+      },
+      "detection_method": "regex + keyword"
     },
     {
       "id": "I-09",
@@ -423,7 +431,8 @@
           "input",
           "batch"
         ]
-      }
+      },
+      "detection_method": "regex + keyword"
     },
     {
       "id": "I-10",
@@ -471,7 +480,8 @@
           "input",
           "batch"
         ]
-      }
+      },
+      "detection_method": "regex + keyword"
     },
     {
       "id": "I-11",
@@ -530,7 +540,8 @@
           "^1{2,}$"
         ],
         "redact_template": "[PHONE]"
-      }
+      },
+      "detection_method": "regex + keyword"
     },
     {
       "id": "I-12",
@@ -591,7 +602,8 @@
         "max_matches": 50,
         "exclusions": [],
         "redact_template": "[ID]"
-      }
+      },
+      "detection_method": "regex + keyword"
     },
     {
       "id": "I-13",
@@ -620,7 +632,8 @@
           "test\\.com$"
         ],
         "redact_template": "[EMAIL]"
-      }
+      },
+      "detection_method": "regex + keyword"
     },
     {
       "id": "I-14",
@@ -666,7 +679,8 @@
         "max_matches": 20,
         "luhn_check": true,
         "redact_template": "[CARD]"
-      }
+      },
+      "detection_method": "regex + keyword"
     },
     {
       "id": "I-15",
@@ -712,7 +726,8 @@
         "max_matches": 30,
         "exclusions": [],
         "redact_template": "[PASSPORT]"
-      }
+      },
+      "detection_method": "regex + keyword"
     },
     {
       "id": "I-16",
@@ -757,7 +772,8 @@
       "config": {
         "max_matches": 30,
         "redact_template": "[BANK]"
-      }
+      },
+      "detection_method": "regex + keyword"
     },
     {
       "id": "I-17",
@@ -793,7 +809,8 @@
         "max_matches": 30,
         "exclusions": [],
         "redact_template": "[IP]"
-      }
+      },
+      "detection_method": "regex + keyword"
     },
     {
       "id": "I-18",
@@ -833,7 +850,8 @@
           "anonymous"
         ],
         "redact_template": "[NAME]"
-      }
+      },
+      "detection_method": "regex + keyword"
     },
     {
       "id": "I-19",
@@ -876,7 +894,8 @@
           ],
           "severity_override": "P1"
         }
-      }
+      },
+      "detection_method": "regex + keyword"
     },
     {
       "id": "I-20",
@@ -941,7 +960,8 @@
         ],
         "gdpr_audit": true,
         "redact_template": "[GDPR_ART9]"
-      }
+      },
+      "detection_method": "regex + keyword"
     },
     {
       "id": "I-21",
@@ -983,7 +1003,8 @@
         "scopes": [
           "input"
         ]
-      }
+      },
+      "detection_method": "regex + keyword"
     },
     {
       "id": "I-22",
@@ -1035,7 +1056,8 @@
         "scopes": [
           "input"
         ]
-      }
+      },
+      "detection_method": "regex + keyword"
     },
     {
       "id": "I-23",
@@ -1092,7 +1114,8 @@
         "scopes": [
           "input"
         ]
-      }
+      },
+      "detection_method": "regex + keyword"
     },
     {
       "id": "I-24",
@@ -1139,7 +1162,8 @@
         "scopes": [
           "input"
         ]
-      }
+      },
+      "detection_method": "regex + keyword"
     },
     {
       "id": "I-25",
@@ -1186,7 +1210,8 @@
         "scopes": [
           "input"
         ]
-      }
+      },
+      "detection_method": "regex + keyword"
     },
     {
       "id": "I-26",
@@ -1243,7 +1268,8 @@
         "scopes": [
           "input"
         ]
-      }
+      },
+      "detection_method": "regex + keyword"
     },
     {
       "id": "I-27",
@@ -1290,7 +1316,8 @@
         "scopes": [
           "input"
         ]
-      }
+      },
+      "detection_method": "regex + keyword"
     },
     {
       "id": "I-28",
@@ -1332,7 +1359,8 @@
         "scopes": [
           "input"
         ]
-      }
+      },
+      "detection_method": "regex + keyword"
     },
     {
       "id": "I-29",
@@ -1369,7 +1397,8 @@
         "scopes": [
           "input"
         ]
-      }
+      },
+      "detection_method": "regex + keyword"
     },
     {
       "id": "I-30",
@@ -1411,7 +1440,8 @@
         "scopes": [
           "input"
         ]
-      }
+      },
+      "detection_method": "regex + keyword"
     },
     {
       "id": "I-31",
@@ -1456,7 +1486,8 @@
         "flags": {
           "session_leak_marker": true
         }
-      }
+      },
+      "detection_method": "regex + keyword"
     },
     {
       "id": "I-32",
@@ -1494,7 +1525,8 @@
         "scopes": [
           "input"
         ]
-      }
+      },
+      "detection_method": "regex + keyword"
     },
     {
       "id": "I-33",
@@ -1543,7 +1575,8 @@
           "input"
         ],
         "min_length": 60
-      }
+      },
+      "detection_method": "regex + keyword"
     },
     {
       "id": "I-34",
@@ -1591,7 +1624,8 @@
         "scopes": [
           "input"
         ]
-      }
+      },
+      "detection_method": "regex + keyword"
     },
     {
       "id": "I-35",
@@ -1673,7 +1707,8 @@
         "scopes": [
           "input"
         ]
-      }
+      },
+      "detection_method": "regex + keyword"
     },
     {
       "id": "I-36",
@@ -1765,7 +1800,8 @@
         "scopes": [
           "input"
         ]
-      }
+      },
+      "detection_method": "keyword"
     },
     {
       "id": "I-37",
@@ -1797,7 +1833,8 @@
         "scopes": [
           "input"
         ]
-      }
+      },
+      "detection_method": "regex + keyword"
     },
     {
       "id": "I-38",
@@ -1842,7 +1879,8 @@
         "link_to_rules": [
           "I-37"
         ]
-      }
+      },
+      "detection_method": "regex + keyword"
     },
     {
       "id": "I-39",
@@ -1899,7 +1937,8 @@
         "scopes": [
           "input"
         ]
-      }
+      },
+      "detection_method": "regex + keyword"
     },
     {
       "id": "I-40",
@@ -1977,7 +2016,8 @@
           "input"
         ],
         "compliance_audit": true
-      }
+      },
+      "detection_method": "regex + keyword"
     },
     {
       "id": "I-41",
@@ -2024,7 +2064,8 @@
         "scopes": [
           "input"
         ]
-      }
+      },
+      "detection_method": "regex + keyword"
     },
     {
       "id": "I-42",
@@ -2061,7 +2102,8 @@
           "I-22"
         ],
         "session_pollution_flag": true
-      }
+      },
+      "detection_method": "keyword"
     },
     {
       "id": "I-43",
@@ -2084,7 +2126,8 @@
         ],
         "no_pattern_match": true,
         "audit_log": true
-      }
+      },
+      "detection_method": "regex + keyword"
     },
     {
       "id": "I-44",
@@ -2122,7 +2165,8 @@
           "input"
         ],
         "normalize": true
-      }
+      },
+      "detection_method": "regex + keyword"
     },
     {
       "id": "I-45",
@@ -2198,7 +2242,8 @@
           "I-16": "P2",
           "I-17": "P2"
         }
-      }
+      },
+      "detection_method": "keyword"
     },
     {
       "id": "I-46",
@@ -2287,7 +2332,8 @@
         ],
         "modifier_rule": true,
         "dynamic": true
-      }
+      },
+      "detection_method": "keyword"
     },
     {
       "id": "I-47",
@@ -2331,7 +2377,8 @@
         ],
         "session_tracking": true,
         "cumulative_score_threshold": 5
-      }
+      },
+      "detection_method": "regex + keyword"
     },
     {
       "id": "I-48",
@@ -2376,7 +2423,8 @@
         "link_to_rules": [
           "I-42"
         ]
-      }
+      },
+      "detection_method": "regex + keyword"
     },
     {
       "id": "I-49",
@@ -2418,7 +2466,8 @@
         "scopes": [
           "input"
         ]
-      }
+      },
+      "detection_method": "regex + keyword"
     },
     {
       "id": "I-50",
@@ -2461,7 +2510,8 @@
           "input"
         ],
         "admin_alert": true
-      }
+      },
+      "detection_method": "regex + keyword"
     },
     {
       "id": "I-51",
@@ -2533,7 +2583,8 @@
         "scopes": [
           "input"
         ]
-      }
+      },
+      "detection_method": "regex + keyword"
     },
     {
       "id": "I-52",
@@ -2590,7 +2641,8 @@
         "scopes": [
           "input"
         ]
-      }
+      },
+      "detection_method": "regex + keyword"
     },
     {
       "id": "I-53",
@@ -2647,7 +2699,8 @@
         "scopes": [
           "input"
         ]
-      }
+      },
+      "detection_method": "regex + keyword"
     },
     {
       "id": "I-54",
@@ -2709,7 +2762,8 @@
         "scopes": [
           "input"
         ]
-      }
+      },
+      "detection_method": "regex + keyword"
     },
     {
       "id": "I-55",
@@ -2771,7 +2825,8 @@
         "scopes": [
           "input"
         ]
-      }
+      },
+      "detection_method": "regex + keyword"
     },
     {
       "id": "I-56",
@@ -2833,7 +2888,8 @@
         "scopes": [
           "input"
         ]
-      }
+      },
+      "detection_method": "regex + keyword"
     },
     {
       "id": "I-57",
@@ -2910,7 +2966,8 @@
         "scopes": [
           "input"
         ]
-      }
+      },
+      "detection_method": "regex + keyword"
     }
   ]
 }

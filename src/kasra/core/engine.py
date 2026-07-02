@@ -218,6 +218,15 @@ class RuleEngine:
         self._registry.rebuild()
         self._loaded = True
         self._rule_count = self._store.count()
+
+        # Validate all rules (warnings only)
+        for rule in rules:
+            patterns = rule.detection.patterns
+            if not patterns and not rule.config.no_pattern_match:
+                # Rules with no patterns and no config-only flag — likely misconfigured
+                logger = __import__("logging").getLogger("kasra.engine")
+                logger.debug("Rule %s has no detection patterns", rule.id)
+
         return self._rule_count
 
     def reload_rules(self) -> int:
@@ -252,7 +261,12 @@ class RuleEngine:
 
         Returns:
             An ``AggregatedResult`` describing all findings.
+
+        Raises:
+            TypeError: If *content* is not a string.
         """
+        if not isinstance(content, str):
+            raise TypeError(f"content must be str, got {type(content).__name__}")
         pipeline = self._get_input_pipeline()
         result = pipeline.run(content, preprocess=preprocess, **context_kwargs)
         self._audit_if_enabled(result, stage="input", **context_kwargs)
@@ -276,7 +290,12 @@ class RuleEngine:
 
         Returns:
             An ``AggregatedResult`` describing all findings.
+
+        Raises:
+            TypeError: If *content* is not a string.
         """
+        if not isinstance(content, str):
+            raise TypeError(f"content must be str, got {type(content).__name__}")
         pipeline = self._get_output_pipeline()
         result = pipeline.run(content, preprocess=preprocess, **context_kwargs)
         self._audit_if_enabled(result, stage="output", **context_kwargs)

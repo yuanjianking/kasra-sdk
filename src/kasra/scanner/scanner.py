@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import fnmatch
 import json
 import os
 import re
@@ -10,6 +11,10 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 
 from kasra.scanner.models import CodeReviewFinding, CodeReviewResult
+from kasra.scanner.checkers import (
+    init_checkers, run_checker,
+    match_dockerfile, match_yaml_path, match_keyvalue,
+)
 
 
 # Default patterns to always ignore
@@ -26,6 +31,38 @@ IGNORE_EXTS = {".pyc", ".pyo", ".so", ".dll", ".dylib", ".exe",
                ".xls", ".xlsx", ".ppt", ".pptx", ".min.js", ".min.css"}
 
 MAX_FILE_SIZE = 1 * 1024 * 1024  # 1 MiB
+
+KASRAIGNORE_FILENAME = ".kasraignore"
+
+
+def _load_ignore_patterns(scan_root: Path) -> list[str]:
+    """Load patterns from ``.kasraignore`` in *scan_root*.
+
+    Returns:
+        List of ``fnmatch`` patterns (empty if no file exists).
+    """
+    ignore_file = scan_root / KASRAIGNORE_FILENAME
+    if not ignore_file.exists():
+        return []
+    try:
+        patterns: list[str] = []
+        for line in ignore_file.read_text().splitlines():
+            line = line.strip()
+            if line and not line.startswith("#"):
+                patterns.append(line)
+        return patterns
+    except OSError:
+        return []
+
+
+_is_vulnerable_impl = None
+def _is_vulnerable(installed: str, vulnerable_range: str) -> bool:
+    """Compare semver strings for CVE checking."""
+    global _is_vulnerable_impl
+    if _is_vulnerable_impl is None:
+        from kasra.scanner.checkers import _is_vulnerable as _impl
+        _is_vulnerable_impl = _impl
+    return _is_vulnerable_impl(installed, vulnerable_range)
 
 
 def _matches_glob(file_path: str, patterns: list[str]) -> bool:
@@ -127,6 +164,7 @@ class CodeReviewScanner:
             self._rules_path = find_data_dir("rules") / "_code-review-rules.json"
 
         self._rules: list[dict[str, Any]] = []
+        self._ignore_patterns: list[str] = []
 
     # ------------------------------------------------------------------
     # Public API
@@ -176,6 +214,13 @@ class CodeReviewScanner:
         if not self._rules:
             result.error = "No rules loaded. Call load_rules() first."
             return result
+
+        # Load .kasraignore patterns
+        self._ignore_patterns = (
+            _load_ignore_patterns(scan_path)
+            if scan_path.is_dir()
+            else _load_ignore_patterns(scan_path.parent)
+        )
 
         if scan_path.is_file():
             self._scan_file(scan_path, result)
@@ -290,6 +335,7 @@ class CodeReviewScanner:
             # ── Auth / access control ──
             "SEC-18": ("_check_auth_missing", ["py", "js", "ts", "java", "go", "cs", "php", "rb"], 0.35, "Authentication missing on API route"),
             "SEC-22": ("_check_idor", ["py", "js", "ts", "java", "go", "cs", "php", "rb"], 0.35, "IDOR via route param to DB query"),
+            "SEC-40": ("_check_cve", ["json", "txt", "xml"], 0.5, "Known CVE dependencies"),
             "SEC-39": ("_check_dep_confusion", ["json", "txt"], 0.3, "Dependency confusion risk"),
 
             # ── Data protection ──
@@ -329,20 +375,14 @@ class CodeReviewScanner:
 
         # ── Phase 0: Semgrep AST-level matching (optional backend) ──
         _try_semgrep(content, rel_path, rule_id, matches)
-        CodeReviewScanner._init_code_checks()
-        if rule_id in CodeReviewScanner._CODE_CHECKS:
-            method_name, exts, min_conf, _ = CodeReviewScanner._CODE_CHECKS[rule_id]
-            ext = rel_path.rsplit(".", 1)[-1].lower() if "." in rel_path else ""
-            if ext in exts:
-                method = getattr(CodeReviewScanner, method_name, None)
-                if method:
-                    try:
-                        method_matches = method(content, rel_path)
-                        for m in method_matches:
-                            if m["confidence"] >= min_conf:
-                                matches.append(m)
-                    except Exception:
-                        pass
+
+        # ── Phase 1: Python checker from checkers.py ──
+        init_checkers()
+        try:
+            checker_matches = run_checker(rule_id, content, rel_path)
+            matches.extend(checker_matches)
+        except Exception:
+            pass
 
         # ── Phase 2: run JSON patterns (regex + config engines) ──
         for pat in patterns:
@@ -366,17 +406,17 @@ class CodeReviewScanner:
 
             elif pat_type == "config_dockerfile":
                 matches.extend(
-                    CodeReviewScanner._match_dockerfile(content, pat_value, confidence)
+                    match_dockerfile(content, pat_value, confidence)
                 )
 
             elif pat_type == "config_yaml":
                 matches.extend(
-                    CodeReviewScanner._match_yaml_path(content, pat_value, confidence)
+                    match_yaml_path(content, pat_value, confidence)
                 )
 
             elif pat_type == "config_keyvalue":
                 matches.extend(
-                    CodeReviewScanner._match_keyvalue(content, pat_value, confidence)
+                    match_keyvalue(content, pat_value, confidence)
                 )
 
         if mode == "all" and len(matches) < len(patterns):
@@ -1119,6 +1159,12 @@ class CodeReviewScanner:
                     })
 
         return matches
+
+    @staticmethod
+    def _check_cve(content: str, rel_path: str) -> list[dict[str, Any]]:
+        """Check dependencies against known CVE database."""
+        from kasra.scanner.checkers import check_cve
+        return check_cve(content, rel_path)
 
     @staticmethod
     def _check_integer_overflow(content: str, rel_path: str) -> list[dict[str, Any]]:

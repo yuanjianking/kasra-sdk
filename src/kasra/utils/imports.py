@@ -64,9 +64,9 @@ def optional_import(
 
     Usage::
 
-        numpy = optional_import("numpy", fallback=None)
-        if numpy is None:
-            raise RuntimeError("numpy is required for ML features")
+        semgrep = optional_import("semgrep", fallback=None)
+        if semgrep is None:
+            # semgrep not installed — fall back to regex
     """
     try:
         mod = importlib.import_module(module_path, package=package_name)

@@ -346,13 +346,12 @@ class TestSEC40CVEDeps:
         assert any(f.rule_id == "SEC-40" for f in result.findings)
 
     def test_safe_lodash(self, scanner, tmp_repo):
-        # Phase 1: SEC-40 flags presence of known-vulnerable packages regardless of version.
-        # Phase 2 would add semver comparison against specific CVE ranges.
+        # SEC-40 now does proper semver comparison via _check_cve Python checker.
+        # 4.17.21 >= 4.17.21 (fixed) → should NOT trigger.
         f = tmp_repo / "package.json"
         f.write_text('{"dependencies": {"lodash": "^4.17.21"}}\n')
         result = scanner.scan(tmp_repo)
-        # Phase 1: flags all lodash occurrences (no semver comparison yet)
-        assert any(f.rule_id == "SEC-40" for f in result.findings)
+        assert not any(f.rule_id == "SEC-40" for f in result.findings)
 
     def test_vulnerable_log4j(self, scanner, tmp_repo):
         f = tmp_repo / "pom.xml"
@@ -937,3 +936,64 @@ class TestInsecureDeletion:
         f.write_text("is_deleted = True\n")
         result = scanner.scan(tmp_repo)
         assert any(f.rule_id == "SEC-59" for f in result.findings)
+
+
+# ---------------------------------------------------------------------------
+# Incremental scanner tests
+# ---------------------------------------------------------------------------
+
+class TestIncrementalScanner:
+    """IncrementalScanner: cache-based skip for unchanged files."""
+
+    def test_first_scan_full(self, scanner, tmp_repo):
+        from kasra.scanner.incremental import IncrementalScanner
+        inc = IncrementalScanner(scanner, cache_dir=tmp_repo / ".kasra-cache")
+        (tmp_repo / "secret.py").write_text("KEY = 'AKIAIOSFODNN7EXAMPLE'\n")
+        result = inc.scan(tmp_repo)
+        assert result.files_scanned > 0
+        assert result.total_findings > 0
+
+    def test_second_scan_skips_unchanged(self, scanner, tmp_repo):
+        from kasra.scanner.incremental import IncrementalScanner
+        inc = IncrementalScanner(scanner, cache_dir=tmp_repo / ".kasra-cache")
+        (tmp_repo / "secret.py").write_text("KEY = 'AKIAIOSFODNN7EXAMPLE'\n")
+        r1 = inc.scan(tmp_repo)
+        assert r1.files_scanned > 0
+        r2 = inc.scan(tmp_repo)
+        assert r2.files_skipped >= r1.files_scanned
+
+    def test_scan_finds_new_files(self, scanner, tmp_repo):
+        from kasra.scanner.incremental import IncrementalScanner
+        inc = IncrementalScanner(scanner, cache_dir=tmp_repo / ".kasra-cache")
+        (tmp_repo / "secret.py").write_text("KEY = 'AKIAIOSFODNN7EXAMPLE'\n")
+        inc.scan(tmp_repo)
+        (tmp_repo / "more_secret.py").write_text("KEY = 'AKIAIOSFODNN7EXAMPLE'\n")
+        r2 = inc.scan(tmp_repo)
+        assert r2.files_scanned >= 1
+
+    def test_scan_finds_modified_files(self, scanner, tmp_repo):
+        from kasra.scanner.incremental import IncrementalScanner
+        inc = IncrementalScanner(scanner, cache_dir=tmp_repo / ".kasra-cache")
+        f = tmp_repo / "secret.py"
+        f.write_text("x = 1\n")
+        inc.scan(tmp_repo)
+        f.write_text("KEY = 'AKIAIOSFODNN7EXAMPLE'\n")
+        import time; time.sleep(0.01)
+        r2 = inc.scan(tmp_repo)
+        assert r2.files_scanned >= 1
+
+    def test_clear_cache(self, scanner, tmp_repo):
+        from kasra.scanner.incremental import IncrementalScanner
+        inc = IncrementalScanner(scanner, cache_dir=tmp_repo / ".kasra-cache")
+        (tmp_repo / "secret.py").write_text("KEY = 'AKIAIOSFODNN7EXAMPLE'\n")
+        inc.scan(tmp_repo)
+        assert inc.clear_cache() > 0
+
+    def test_no_false_positive_clean(self, scanner, tmp_repo):
+        from kasra.scanner.incremental import IncrementalScanner
+        inc = IncrementalScanner(scanner, cache_dir=tmp_repo / ".kasra-cache")
+        f = tmp_repo / "calc.py"
+        f.write_text("def add(a, b):\n    return a + b\n")
+        result = inc.scan(tmp_repo)
+        real = [ff for ff in result.findings if ff.confidence > 0.2]
+        assert len(real) == 0
