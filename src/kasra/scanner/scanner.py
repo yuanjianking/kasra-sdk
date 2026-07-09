@@ -93,58 +93,71 @@ _SEMGREP_RUNNER: Any | None = None
 
 def _try_semgrep(content: str, rel_path: str, rule_id: str,
                   matches: list[dict[str, Any]]) -> None:
-    """Optional Phase 0: run Semgrep AST matching if available.
+    """Phase 0: run Semgrep AST matching.
 
-    Semgrep is an optional dependency.  If ``semgrep`` is on ``$PATH``
-    and *rule_id* has Semgrep patterns, this runs first and pushes
-    matches into the shared list (deduped by position).
+    Semgrep is a **required** dependency for any rule that has Semgrep
+    patterns.  If a rule needs Semgrep and it is not available, an
+    :exc:`ImportError` is raised.  Rules without Semgrep patterns are
+    skipped gracefully.
+
+    Raises:
+        ImportError: If a rule requires Semgrep but it is not installed.
+        Exception: If semgrep execution fails.
     """
     global _SEMGREP_AVAILABLE, _SEMGREP_RUNNER
 
-    # One-time check: is semgrep installed?
+    # One-time import of the adapter (in-memory pattern registry — no CLI needed)
+    if _SEMGREP_RUNNER is None:
+        try:
+            from kasra.analyzers.semgrep_adapter import (
+                SemgrepRunner as SR,
+                has_semgrep_patterns as HSM,
+            )
+            _SEMGREP_RUNNER = (SR(), HSM)
+        except ImportError as exc:
+            raise ImportError(
+                "Semgrep package is required for code review. "
+                "Install it with: pip install kasra-sdk[semgrep]"
+            ) from exc
+
+    runner, has_patterns = _SEMGREP_RUNNER
+    if not has_patterns(rule_id):
+        return  # this rule doesn't use Semgrep — normal
+
+    # This rule needs Semgrep — ensure the CLI is on PATH
     if _SEMGREP_AVAILABLE is None:
         try:
             import subprocess
             result = subprocess.run(["semgrep", "--version"],
                                     capture_output=True, text=True, timeout=5)
             _SEMGREP_AVAILABLE = result.returncode == 0
-        except Exception:
+        except Exception as exc:
             _SEMGREP_AVAILABLE = False
+            raise ImportError(
+                "Semgrep CLI is required for code review but was not found "
+                "on PATH. Install it with: pip install kasra-sdk[semgrep]"
+            ) from exc
 
     if not _SEMGREP_AVAILABLE:
-        return
+        raise ImportError(
+            "Semgrep CLI is required for code review but was not found "
+            "on PATH. Install it with: pip install kasra-sdk[semgrep]"
+        )
 
-    # One-time import: load the adapter if semgrep is available
-    if _SEMGREP_RUNNER is None:
-        try:
-            from kasra.analyzers.semgrep_adapter import SemgrepRunner as SR, has_semgrep_patterns as HSM
-            _SEMGREP_RUNNER = (SR(), HSM)
-        except Exception:
-            _SEMGREP_AVAILABLE = False
-            return
-            return
-
-    runner, has_patterns = _SEMGREP_RUNNER
-    if not has_patterns(rule_id):
-        return
-
-    try:
-        findings = runner.run(rel_path, content, rule_id)
-        seen: set[tuple[int, int]] = set()
-        for f in findings:
-            pos = (f.line_number, f.column)
-            if pos in seen:
-                continue
-            seen.add(pos)
-            matches.append({
-                "start": max(0, f.line_number - 1),
-                "end": f.line_number,
-                "matched": f.matched_text[:200],
-                "confidence": f.confidence,
-                "pattern": f"semgrep/{rule_id}",
-            })
-    except Exception:
-        pass  # semgrep unavailable or error — fall through
+    findings = runner.run(rel_path, content, rule_id)
+    seen: set[tuple[int, int]] = set()
+    for f in findings:
+        pos = (f.line_number, f.column)
+        if pos in seen:
+            continue
+        seen.add(pos)
+        matches.append({
+            "start": max(0, f.line_number - 1),
+            "end": f.line_number,
+            "matched": f.matched_text[:200],
+            "confidence": f.confidence,
+            "pattern": f"semgrep/{rule_id}",
+        })
 
 
 class CodeReviewScanner:
@@ -165,6 +178,7 @@ class CodeReviewScanner:
 
         self._rules: list[dict[str, Any]] = []
         self._ignore_patterns: list[str] = []
+        self._disabled_rule_ids: set[str] = set()
 
     # ------------------------------------------------------------------
     # Public API
@@ -193,6 +207,42 @@ class CodeReviewScanner:
     @property
     def rules(self) -> list[dict[str, Any]]:
         return list(self._rules)
+
+    @property
+    def rule_ids(self) -> list[str]:
+        """Return the list of loaded rule IDs."""
+        return [r.get("id", "UNKNOWN") for r in self._rules]
+
+    @property
+    def disabled_rule_ids(self) -> set[str]:
+        """Return the set of currently disabled rule IDs."""
+        return set(self._disabled_rule_ids)
+
+    def enable_rule(self, rule_id: str) -> None:
+        """Re-enable a code review rule at runtime.
+
+        Args:
+            rule_id: The rule ID to enable (e.g. ``"SEC-01"``).
+
+        Raises:
+            ValueError: If the rule ID is not found.
+        """
+        if rule_id not in self.rule_ids:
+            raise ValueError(f"Code review rule not found: {rule_id}")
+        self._disabled_rule_ids.discard(rule_id)
+
+    def disable_rule(self, rule_id: str) -> None:
+        """Disable a code review rule at runtime.
+
+        Args:
+            rule_id: The rule ID to disable (e.g. ``"SEC-01"``).
+
+        Raises:
+            ValueError: If the rule ID is not found.
+        """
+        if rule_id not in self.rule_ids:
+            raise ValueError(f"Code review rule not found: {rule_id}")
+        self._disabled_rule_ids.add(rule_id)
 
     def scan(self, path: str | Path) -> CodeReviewResult:
         """Scan a file or directory for code review findings.
@@ -281,6 +331,9 @@ class CodeReviewScanner:
 
         # Check each rule against this file
         for rule in self._rules:
+            rule_id = rule.get("id", "UNKNOWN")
+            if rule_id in self._disabled_rule_ids:
+                continue
             target_patterns = rule.get("target_files", ["**/*"])
             if not _matches_glob(rel_path, target_patterns):
                 continue
@@ -373,16 +426,13 @@ class CodeReviewScanner:
 
         matches: list[dict[str, Any]] = []
 
-        # ── Phase 0: Semgrep AST-level matching (optional backend) ──
+        # ── Phase 0: Semgrep AST-level matching ──
         _try_semgrep(content, rel_path, rule_id, matches)
 
         # ── Phase 1: Python checker from checkers.py ──
         init_checkers()
-        try:
-            checker_matches = run_checker(rule_id, content, rel_path)
-            matches.extend(checker_matches)
-        except Exception:
-            pass
+        checker_matches = run_checker(rule_id, content, rel_path)
+        matches.extend(checker_matches)
 
         # ── Phase 2: run JSON patterns (regex + config engines) ──
         for pat in patterns:

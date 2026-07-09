@@ -1,6 +1,6 @@
-# Kasra L3 Rule Engine
+# Kasra Rule Engine
 
-**AI Development Security Governance + Code Repo Security Review** — 5-layer content detection engine for securing LLM inputs/outputs and batch-scanning code repositories for vulnerabilities.
+**AI Development Security Governance + Code Repo Security Review** — two independent detection engines for securing LLM inputs/outputs and scanning code repositories for vulnerabilities.
 
 ```python
 from kasra import RuleEngine
@@ -12,24 +12,20 @@ engine.load_rules()
 result = engine.detect_input("my password is secret123")
 if result.blocked:
     print("Blocked — credential leak detected")
-
-# Code review (CLI)
-# $ kasra-scan review ./src
 ```
 
 ---
 
 ## What it does
 
-| Scenario | Product | Rules |
-|----------|---------|-------|
-| User sends a prompt with a password | Input detection (I-series) | 57 rules |
-| AI generates dangerous code | Output detection (O-series) | 53 rules |
-| Code repo has SQL injection | Code review (SEC-series) | 83 rules |
-| Dockerfile uses `:latest` | Code review (IAC-series) | 17 rules |
-| Microservice lacks mTLS | Code review (ARCH-series) | 21 rules |
+| Scenario | Engine | Rules |
+|----------|--------|-------|
+| User sends a prompt with a password | `detect_input()` — input rules | 57 rules |
+| AI generates dangerous code | `detect_output()` — output rules | 53 rules |
+| Code repo has SQL injection | `review_code()` — code review rules (SEC-series) | 83 rules |
+| Container uses `:latest` | `review_code()` — IaC rules (IAC-series) | 17 rules |
 
-**193 rules total** across 3 detection engines, with 7 action types (block / warn / redact / clean / truncate / soft_allow / dynamic).
+**110 input/output rules** for runtime content detection, plus **83 code review rules** for repository security scanning.
 
 ---
 
@@ -38,19 +34,10 @@ if result.blocked:
 ### Install
 
 ```bash
-# Production install
 pip install kasra-sdk
-
-# With Semgrep AST backend (AST-level matching + dataflow tracking)
-pip install kasra-sdk[semgrep]
-
-# Development install (from source)
-pip install -e .
-pip install -e ".[dev]"             # With test tools
-pip install -e ".[dev,semgrep]"     # Tests + Semgrep
 ```
 
-### Scan AI input
+### Input detection
 
 ```python
 from kasra import RuleEngine
@@ -67,7 +54,7 @@ else:
     print("✅ Pass")
 ```
 
-### Scan AI output
+### Output detection
 
 ```python
 result = engine.detect_output("eval(user_input)")
@@ -75,6 +62,23 @@ for dr in result.triggered_rules:
     print(f"  {dr.rule_id}: {dr.rule_name}")
     for ev in dr.evidence:
         print(f"    [{ev.source_layer}] {ev.reason}")
+```
+
+### Code review (Python API)
+
+```python
+from kasra import RuleEngine
+
+engine = RuleEngine()
+engine.load_rules()
+
+# Single file or directory
+result = engine.review_code("./src")
+for f in result.findings:
+    print(f"  [{f.rule_id}] {f.file_path}:{f.line_number}")
+
+# Or scan a single file
+result = engine.review_code("config.py")
 ```
 
 ### Code review (CLI)
@@ -88,40 +92,9 @@ kasra-scan review ./src --severity P0
 
 # JSON output (for CI integration)
 kasra-scan review ./src --json
-
-# Exclude paths via .kasraignore
-echo 'vendor/*' > .kasraignore
-echo 'generated/*' >> .kasraignore
-kasra-scan review ./src
 ```
 
-### Code review (Python API)
-
-```python
-from kasra.scanner import CodeReviewScanner
-from kasra.scanner.incremental import IncrementalScanner
-
-scanner = CodeReviewScanner()
-scanner.load_rules()
-
-# Full scan
-result = scanner.scan("./src")
-for f in result.findings:
-    print(f"  [{f.rule_id}] {f.file_path}:{f.line_number}")
-
-# Incremental scan (skips unchanged files)
-inc = IncrementalScanner(scanner)
-result = inc.scan("./src")   # Second run skips cached files
-```
-
-### Scan a file
-
-```python
-result = engine.scan_file("config.py")
-print(f"Findings: {len(result.triggered_rules)}")
-```
-
-### Track a session
+### Behavior tracking
 
 ```python
 engine.track_behavior("hello", session_id="sess-1")
@@ -133,82 +106,45 @@ if result.blocked:
 
 ---
 
-## Detection engines
+## API reference
 
-Three engines work together — each runs in a specific phase, and higher-precision engines take priority.
+### Content detection
 
-```
-┌──────────────────────────────────────────────────────────┐
-│ Phase 0: Semgrep AST (optional)                           │
-│   pip install kasra-sdk[semgrep]                          │
-│   → AST-level matching, dataflow tracking (4 taint rules) │
-├──────────────────────────────────────────────────────────┤
-│ Phase 1: Python Checkers (55 checkers)                    │
-│   → Injection, XSS, SSRF, auth, crypto, mobile, CVE, ... │
-│   → Highest precision, context-aware confidence           │
-├──────────────────────────────────────────────────────────┤
-│ Phase 2: JSON Patterns (regex + config engines)           │
-│   → Regex (format matching: AKIA, IP, email, ...)         │
-│   → Config YAML (K8s/Docker/Compose key-path parser)     │
-│   → Config Dockerfile (FROM/USER/ADD instruction parser) │
-│   → Config key=value (.env/.properties parser)            │
-└──────────────────────────────────────────────────────────┘
-```
+| Method | Purpose |
+|--------|---------|
+| `detect_input(text)` | Scan user-provided text (input rules) |
+| `detect_output(text)` | Scan AI-generated text (output rules) |
+| `track_behavior(text, session_id)` | Session-level behavior monitoring |
 
-### Detection methods by rule category
+### Code review
 
-| Rules | Engine | Precision |
-|-------|--------|-----------|
-| I-series (input detection) | regex + keyword | Text pattern matching |
-| O-01~O-17 (code security) | Python checker + Semgrep | Highest |
-| O-18~O-53 (credentials/config) | regex | Format matching |
-| SEC-05~SEC-66 (code review) | Python checker | Highest |
-| SEC-01~SEC-04 (credentials) | regex | Format matching |
-| IAC (Docker/K8s/Terraform) | Config engine + regex | Structural parsing |
-| ARCH (architecture) | Python checker | Design-level |
+| Method | Purpose |
+|--------|---------|
+| `review_code(path)` | Scan a file or directory for security vulnerabilities |
+| `get_code_review_rules()` | List all loaded code review rule definitions |
+| `get_code_review_rule_ids()` | List code review rule IDs (e.g. `["SEC-01", ...]`) |
 
-### Dataflow (taint) tracking
+### Rule management
 
-When Semgrep is installed, 4 taint rules trace user input from source to sink:
+| Method | Purpose |
+|--------|---------|
+| `get_rules()` | All input/output rules as `RuleDefinition` objects |
+| `get_rules_for_stage(stage)` | Input/output rules filtered by stage (`"input"` / `"output"`) |
+| `get_rule(rule_id)` | Single input/output rule by ID |
+| `enable_rule(rule_id)` | Re-enable an input/output rule at runtime |
+| `disable_rule(rule_id)` | Disable an input/output rule at runtime |
+| `enable_code_review_rule(rule_id)` | Re-enable a code review rule at runtime |
+| `disable_code_review_rule(rule_id)` | Disable a code review rule at runtime |
+| `disabled_code_review_rule_ids` | View currently disabled code review rule IDs |
 
-| Rule | Source → Sink |
-|------|--------------|
-| SEC-05 | `request.body` → `cursor.execute()` |
-| SEC-07 | `request.body` → `os.system()` |
-| SEC-19 | `request.body` → `requests.get()` |
-| SEC-45 | `request.body` → `open()` |
+### Lifecycle
 
----
-
-## 5-layer analysis
-
-Every detection runs through the 5-layer analyzer pipeline:
-
-| Layer | What it does |
-|-------|-------------|
-| **1. Lexical** | Regex, keyword, entropy, composite matching |
-| **2. Syntactic** | Language detection (15 languages), code block analysis |
-| **3. Semantic** | Luhn checksum, surrounding context, data flow analysis |
-| **4. Correlation** | Cross-rule context boosting, evidence chains |
-| **5. External** | CVE lookup, domain reputation, package registry |
-
-### Evidence chain
-
-Every triggered rule carries structured evidence explaining WHY:
-
-```python
-result = engine.detect_output("subprocess.call('rm -rf /', shell=True)")
-for dr in result.triggered_rules:
-    for ev in dr.evidence:
-        print(f"[{ev.source_layer}] {ev.reason}")
-```
-
-```
-[lexical] Pattern matched at position 0-16
-[syntactic] Content language detected as: python (confidence 0.72)
-[semantic] Content length 45 exceeds max_length=50000
-[correlation] Severity boosted to P1 due to proximity with I-12
-```
+| Method | Purpose |
+|--------|---------|
+| `load_rules(path)` | Load input/output rules from disk (auto-detects path if omitted) |
+| `reload_rules()` | Hot-reload all input/output rules |
+| `start()` | Start audit logger (automatic on first detection) |
+| `stop()` | Flush and stop audit logger (call at shutdown) |
 
 ---
 
@@ -220,18 +156,75 @@ kasra/
 ├── models/            Pydantic models (rules, results, context)
 ├── matchers/          ReMatcher, KeywordMatcher, EntropyMatcher, CompositeMatcher
 ├── analyzers/         LanguageDetector, LuhnValidator, DataFlowAnalyzer,
-│                      CrossRuleCorrelator, SemgrepRunner (adapter)
+│                      CrossRuleCorrelator, SemgrepRunner
 ├── scanner/           CodeReviewScanner, IncrementalScanner, checkers (55 rules)
-├── pipeline/          Input, Output (3-phase streaming), Batch, Behavior
+├── pipeline/          Input, Output (3-phase streaming), Behavior
 ├── actions/           Block, Warn, Redact, Clean, Truncate, SoftAllow, Dynamic
 ├── hooks/             Plugin lifecycle hooks, MetricsCollector
 ├── audit/             Async logger + Console/File exporters
-├── rules/             RuleLoader, RuleStore, checks (O-series Python checkers)
+├── rules/             RuleLoader, RuleStore, checks
 ├── config/            YAML config + env vars (KASRA_*)
 ├── preprocessing/     Normalizer, Chunker
 ├── context/           ChunkBuffer (streaming)
 └── cli.py             kasra-scan CLI
 ```
+
+Two detection engines operate independently:
+
+```
+RuleEngine                    CodeReviewScanner
+├── detect_input(text)        ├── scan(path)
+├── detect_output(text)       ├── enable_rule(id)
+└── track_behavior(...)       └── disable_rule(id)
+```
+
+**Input/output rules** (`input-rules.json` / `output-rules.json`) → `RuleEngine` for runtime content safety.
+
+**Code review rules** (`_code-review-rules.json`) → `CodeReviewScanner` for repository security audit.
+
+---
+
+## Detection engines
+
+Three detection phases work together for code review — each runs in turn for every rule.
+
+```
+┌──────────────────────────────────────────────────────────┐
+│ Phase 0: Semgrep AST                                     │
+│   → AST-level matching, dataflow tracking (4 taint rules)│
+├──────────────────────────────────────────────────────────┤
+│ Phase 1: Python Checkers (55 checkers)                   │
+│   → Injection, XSS, SSRF, auth, crypto, mobile, CVE, ... │
+│   → Highest precision, context-aware confidence          │
+├──────────────────────────────────────────────────────────┤
+│ Phase 2: JSON Patterns (regex + config engines)          │
+│   → Regex (format matching: AKIA, IP, email, ...)        │
+│   → Config YAML (K8s/Docker/Compose key-path parser)    │
+│   → Config Dockerfile (FROM/USER/ADD instruction parser)│
+│   → Config key=value (.env/.properties parser)           │
+└──────────────────────────────────────────────────────────┘
+```
+
+### Dataflow (taint) tracking
+
+Semgrep taint rules trace user input from source to sink:
+
+| Rule | Source → Sink |
+|------|--------------|
+| SEC-05 | `request.body` → `cursor.execute()` |
+| SEC-07 | `request.body` → `os.system()` |
+| SEC-19 | `request.body` → `requests.get()` |
+| SEC-45 | `request.body` → `open()` |
+
+---
+
+## Rule coverage
+
+| Series | Count | Domain |
+|--------|-------|--------|
+| I-01 ~ I-57 | 57 | Input: credentials, PII, injection, jailbreak, file risk, context security, malicious code |
+| O-01 ~ O-53 | 53 | Output: code safety, credential leak, config, supply chain, content safety, compliance, i18n, audit |
+| SEC/IAC | 83 | Code review: injection, XSS, crypto, auth, design flaws, mobile, IaC |
 
 ---
 
@@ -239,14 +232,13 @@ kasra/
 
 ```bash
 kasra-scan info                       # Engine status
-kasra-scan list-rules                 # All rules
+kasra-scan list-rules                 # All loaded input/output rules
 kasra-scan input "password=123"       # Scan input text
-kasra-scan scan ./config.py           # Scan a file
 kasra-scan health                     # Health check
 kasra-scan metrics                    # Detection metrics
 kasra-scan review ./src               # Code review scan
 kasra-scan review ./src --json        # Code review as JSON
-kasra-scan review ./src --severity P0  # Only P0 findings
+kasra-scan review ./src --severity P0 # Only P0 findings
 ```
 
 ---
@@ -270,32 +262,20 @@ generated/*.py
 Second scan skips unchanged files:
 
 ```python
+from kasra.scanner.incremental import IncrementalScanner
+
+scanner = CodeReviewScanner()
+scanner.load_rules()
+
 inc = IncrementalScanner(scanner, cache_dir=".kasra-cache")
 r1 = inc.scan("./src")   # Full scan, caches hashes
-r2 = inc.scan("./src)    # Only changed files
-inc.clear_cache()         # Force re-scan
+r2 = inc.scan("./src")   # Only changed files
+inc.clear_cache()        # Force re-scan
 ```
 
 ### CVE dependency checking
 
-SEC-40 checks `package.json`, `requirements.txt`, and `pom.xml` against an embedded database of 20 known CVEs with proper semver comparison:
-
-```
-lodash@^4.17.15 → CVE-2020-28502 (HIGH)
-log4j@2.14.1    → CVE-2021-44228 (CRITICAL)
-lodash@^4.17.21 → OK (fixed)
-```
-
----
-
-## Rule coverage
-
-| Series | Count | Domain |
-|--------|-------|--------|
-| I-01 ~ I-57 | 57 | Input: credentials, PII, injection, jailbreak, file risk, context security, malicious code |
-| O-01 ~ O-53 | 53 | Output: code safety, credential leak, config, supply chain, content safety, compliance, i18n, audit |
-| SEC-01 ~ SEC-83 | 83 | Code review: injection, XSS, crypto, auth, design flaws, mobile, IaC |
-| **Total** | **193** | |
+SEC-40 checks `package.json`, `requirements.txt`, and `pom.xml` against an embedded database of known CVEs with proper semver comparison.
 
 ---
 
@@ -315,24 +295,7 @@ Override via environment variables:
 
 ```bash
 export KASRA_ENGINE__MAX_CONCURRENT_RULES=50
-export KASRA_DISABLE_SEMGREP=1    # Disable semgrep backend
 ```
-
----
-
-## Roadmap
-
-| Phase | Feature | Status |
-|-------|---------|--------|
-| Phase A | Core engine + I/O rules | ✅ Done |
-| Phase B | Semgrep AST backend | ✅ Done |
-| Phase C | Dataflow (taint) tracking | ✅ Done |
-| Phase D | Incremental scanning | ✅ Done |
-| Phase E | Python checker engine | ✅ Done |
-| Phase F | SARIF output format | 📋 Planned |
-| Phase G | SBOM generation | 📋 Planned |
-| Phase H | Plugin system for custom rules | 📋 Planned |
-| Phase I | IDE integration (VS Code) | 📋 Planned |
 
 ---
 
@@ -343,7 +306,6 @@ git clone <repo>
 cd kasra-sdk
 pip install -e ".[dev]"
 pytest tests/                    # Unit tests
-KASRA_DISABLE_SEMGREP=1 pytest   # Skip semgrep-dependent tests
 ```
 
 ---

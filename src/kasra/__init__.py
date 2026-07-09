@@ -1,4 +1,4 @@
-"""Kasra L3 Rule Engine — AI Development Security Governance.
+"""Kasra Rule Engine — AI Development Security Governance.
 
 The Rule Engine is the core logic layer of the Kasra platform.
 It receives content (user prompts, AI responses, files, session

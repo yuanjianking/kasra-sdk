@@ -2,7 +2,6 @@
 
 from kasra.config.global_config import (
     AuditConfig,
-    BatchPipelineConfig,
     BehaviorPipelineConfig,
     EngineConfig,
     GlobalConfig,
@@ -21,7 +20,6 @@ __all__ = [
     "PipelineConfig",
     "InputPipelineConfig",
     "OutputPipelineConfig",
-    "BatchPipelineConfig",
     "BehaviorPipelineConfig",
     "AuditConfig",
     "OverrideConfig",

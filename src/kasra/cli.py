@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Kasra L3 Rule Engine — CLI entry point.
+"""Kasra Rule Engine — CLI entry point.
 
 Usage::
 
@@ -24,13 +24,14 @@ from typing import NoReturn
 
 from kasra.core.engine import RuleEngine
 from kasra.models.enums import Severity
+from kasra.models.result import AggregatedResult
 from kasra.scanner import CodeReviewScanner
 
 
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="kasra-scan",
-        description="Kasra L3 Rule Engine — AI Development Security Governance",
+        description="Kasra Rule Engine — AI Development Security Governance",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=(
             "Examples:\n"
@@ -168,13 +169,13 @@ def _list_rules(engine: RuleEngine) -> None:
 
 def _show_info(engine: RuleEngine) -> None:
     cfg = engine.config
-    print(f"Kasra L3 Rule Engine v{engine.store.count()} rules loaded")
+    print(f"Kasra Rule Engine v{engine.store.count()} rules loaded")
     print(f"  Rules directory:   {engine._loader.rules_dir}")
     print(f"  Engine config:     {cfg.engine}")
     print(f"  Input pipeline:    {'enabled' if cfg.pipeline.input.enabled else 'disabled'}")
     print(f"  Output pipeline:   {'enabled' if cfg.pipeline.output.enabled else 'disabled'}")
-    print(f"  Batch pipeline:    {'enabled' if cfg.pipeline.batch.enabled else 'disabled'}")
     print(f"  Behavior pipeline: {'enabled' if cfg.pipeline.behavior.enabled else 'disabled'}")
+    print(f"  CodeReviewScanner: available via `kasra-scan review`")
 
     sev_counts = engine.store.count_by_severity()
     for sev in Severity:
@@ -182,9 +183,16 @@ def _show_info(engine: RuleEngine) -> None:
 
 
 def _scan_directory(engine: RuleEngine, path: Path) -> None:
-    results = engine.scan_directory(path)
-    triggered = [r for r in results if r.triggered_rules]
+    """Scan a directory using detect_input on each file."""
+    results = []
+    for file_path in sorted(path.rglob("*")):
+        if not file_path.is_file():
+            continue
+        result = _scan_single_file_content(engine, file_path)
+        if result is not None:
+            results.append(result)
 
+    triggered = [r for r in results if r.triggered_rules]
     print(f"Scanned {len(results)} files, {len(triggered)} triggered rules")
 
     for result in triggered:
@@ -195,8 +203,19 @@ def _scan_directory(engine: RuleEngine, path: Path) -> None:
 
 
 def _scan_single_file(engine: RuleEngine, path: Path) -> None:
-    result = engine.scan_file(str(path))
-    _print_file_result(path.name, result)
+    result = _scan_single_file_content(engine, path)
+    if result is not None:
+        _print_file_result(path.name, result)
+
+
+def _scan_single_file_content(engine: RuleEngine, path: Path) -> AggregatedResult | None:
+    """Read a file and run detect_input on its contents."""
+    try:
+        content = path.read_text("utf-8", errors="replace")
+    except (OSError, UnicodeDecodeError) as exc:
+        print(f"  ⚠ {path.name}: cannot read ({exc})")
+        return None
+    return engine.detect_input(content, file_path=str(path))
 
 
 def _print_result(result) -> None:
@@ -229,21 +248,21 @@ def _print_file_result(filename: str, result) -> None:
 
 
 def _run_code_review(args: argparse.Namespace) -> None:
-    """``kasra-scan review`` — run code review scanner."""
-    scanner = CodeReviewScanner(rules_path=args.rules)
-
+    """``kasra-scan review`` — run code review scanner via RuleEngine."""
+    engine = RuleEngine(
+        rules_dir=args.rules_dir,
+        config_dir=args.config_dir,
+    )
     try:
-        count = scanner.load_rules()
-    except FileNotFoundError as e:
-        print(f"Error: {e}")
-        sys.exit(1)
+        count = engine.load_rules()
+        print(f"Loaded {count} input/output rules")
 
-    scan_path = Path(args.path)
-    if not scan_path.exists():
-        print(f"Error: path not found: {scan_path}")
-        sys.exit(1)
+        scan_path = Path(args.path)
+        if not scan_path.exists():
+            print(f"Error: path not found: {scan_path}")
+            sys.exit(1)
 
-    result = scanner.scan(scan_path)
+        result = engine.review_code(scan_path)
 
     # Filter by severity if requested
     findings = result.findings

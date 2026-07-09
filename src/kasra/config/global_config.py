@@ -44,25 +44,6 @@ class OutputPipelineConfig(BaseModel):
     retain_full_content: bool = True
 
 
-class BatchPipelineConfig(BaseModel):
-    """Settings for the batch file-scan pipeline."""
-
-    enabled: bool = True
-    max_file_size_mb: int = Field(default=10, ge=1, le=500)
-    exclude_patterns: list[str] = Field(
-        default_factory=lambda: [
-            "node_modules/**",
-            ".git/**",
-            "__pycache__/**",
-            "vendor/**",
-            "*.min.js",
-            "*.pyc",
-            "*.egg-info/**",
-        ]
-    )
-    parallel_files: int = Field(default=4, ge=1, le=32)
-
-
 class BehaviorPipelineConfig(BaseModel):
     """Settings for the session-level behaviour monitoring pipeline."""
 
@@ -77,7 +58,6 @@ class PipelineConfig(BaseModel):
 
     input: InputPipelineConfig = InputPipelineConfig()
     output: OutputPipelineConfig = OutputPipelineConfig()
-    batch: BatchPipelineConfig = BatchPipelineConfig()
     behavior: BehaviorPipelineConfig = BehaviorPipelineConfig()
 
 

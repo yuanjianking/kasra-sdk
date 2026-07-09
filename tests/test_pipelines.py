@@ -1,10 +1,6 @@
-"""Unit tests for all 4 pipeline implementations."""
+"""Unit tests for all pipeline implementations."""
 
 from __future__ import annotations
-
-import tempfile
-from pathlib import Path
-from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -15,7 +11,6 @@ from kasra.models.enums import Severity, Stage, PipelinePhase
 from kasra.models.rule import RuleDefinition, DetectionConfig, PatternDefinition, RuleConfig
 from kasra.pipeline.input_pipeline import InputDetectionPipeline
 from kasra.pipeline.output_pipeline import OutputDetectionPipeline
-from kasra.pipeline.batch_pipeline import BatchScanPipeline
 from kasra.pipeline.behavior_pipeline import BehaviorDetectionPipeline
 
 
@@ -183,76 +178,6 @@ class TestOutputPipeline:
         result = pipeline.finalize(ar, None)
         assert result is ar
         assert result.metadata.get("existing") == "value"
-
-
-# ======================================================================
-# BatchScanPipeline
-# ======================================================================
-
-class TestBatchPipeline:
-    def test_get_rules(self, registry):
-        pipeline = BatchScanPipeline(registry, RuleRunner())
-        rules = pipeline.get_rules()
-        assert len(rules) >= 1
-
-    def test_scan_file(self, registry, runner):
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as tmp:
-            tmp.write("my secret password")
-            path = tmp.name
-        try:
-            pipeline = BatchScanPipeline(registry, runner)
-            result = pipeline.scan_file(path)
-            assert result is not None
-        finally:
-            import os
-            os.unlink(path)
-
-    def test_scan_file_not_found(self, registry, runner):
-        pipeline = BatchScanPipeline(registry, runner)
-        result = pipeline.scan_file("/nonexistent/path.txt")
-        assert result is not None
-        # Should not raise
-
-    def test_scan_empty_file(self, registry, runner):
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as tmp:
-            path = tmp.name
-        try:
-            pipeline = BatchScanPipeline(registry, runner)
-            result = pipeline.scan_file(path)
-            assert result is not None
-        finally:
-            import os
-            os.unlink(path)
-
-    def test_scan_file_preprocess(self, registry, runner):
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as tmp:
-            tmp.write("hello world")
-            path = tmp.name
-        try:
-            pipeline = BatchScanPipeline(registry, runner)
-            result_with = pipeline.scan_file(path, preprocess=True)
-            result_without = pipeline.scan_file(path, preprocess=False)
-            assert result_with is not None
-            assert result_without is not None
-        finally:
-            import os
-            os.unlink(path)
-
-    def test_scan_directory(self, registry, runner):
-        with tempfile.TemporaryDirectory() as d:
-            dpath = Path(d)
-            (dpath / "file1.txt").write_text("hello world")
-            (dpath / "file2.txt").write_text("secret password")
-            pipeline = BatchScanPipeline(registry, runner)
-            results = pipeline.scan_directory(str(dpath))
-            assert len(results) == 2
-            for r in results:
-                assert isinstance(r, object)
-
-    def test_scan_directory_nonexistent(self, registry, runner):
-        pipeline = BatchScanPipeline(registry, runner)
-        results = pipeline.scan_directory("/nonexistent")
-        assert results == []
 
 
 # ======================================================================

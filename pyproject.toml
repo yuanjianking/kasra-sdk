@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "kasra-sdk"
 version = "0.3.0"
-description = "Kasra L3 Rule Engine — AI Development Security Governance + Code Repo Security Review. 5-layer content detection engine for LLM input/output safety, credential leak prevention, PII redaction, code security, compliance, and SAST code review."
+description = "Kasra Rule Engine — AI Development Security Governance + Code Repo Security Review. Content detection engine for LLM input/output safety, credential leak prevention, PII redaction, code security, compliance, and SAST code review."
 readme = "README.md"
 license = { text = "Proprietary — Internal Use Only" }
 authors = [
@@ -37,17 +37,16 @@ dependencies = [
     "ahocorasick-rs>=0.22",
     "charset-normalizer>=3.0",
     "orjson>=3.9",
+    "semgrep>=1.0",
 ]
 
 [project.optional-dependencies]
-semgrep = ["semgrep>=1.0"]
 dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.23",
     "pytest-cov>=5.0",
     "mypy>=1.8",
     "ruff>=0.3",
-    "semgrep>=1.0",
 ]
 
 [project.urls]

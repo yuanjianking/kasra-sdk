@@ -149,3 +149,24 @@ class RuleStore:
         merged = dict(self._rules)
         del merged[rule_id]
         self.bulk_replace(merged.values())
+
+    def set_enabled(self, rule_id: str, enabled: bool) -> None:
+        """Enable or disable a rule at runtime.
+
+        Modifies the rule's ``enabled`` flag and rebuilds the indexes so
+        that :meth:`get_enabled_by_stage` reflects the change immediately.
+
+        Args:
+            rule_id: The rule to modify.
+            enabled: ``True`` to enable, ``False`` to disable.
+
+        Raises:
+            RuleNotFoundError: If the rule does not exist.
+        """
+        if rule_id not in self._rules:
+            raise RuleNotFoundError(f"Cannot set enabled: rule not found {rule_id}")
+        rule = self._rules[rule_id]
+        updated = rule.model_copy(update={"enabled": enabled})
+        merged = dict(self._rules)
+        merged[rule_id] = updated
+        self.bulk_replace(merged.values())

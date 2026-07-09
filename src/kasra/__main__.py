@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Kasra L3 Rule Engine — ``python -m kasra`` entry point."""
+"""Kasra Rule Engine — ``python -m kasra`` entry point."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""Kasra L3 Rule Engine — Public API.
+"""Kasra Rule Engine — Public API.
 
 The :class:`RuleEngine` is the single entry point for all SDK consumers::
 
@@ -39,12 +39,13 @@ from kasra.rules.loader import RuleLoader
 from kasra.rules.store import RuleStore
 from kasra.pipeline.input_pipeline import InputDetectionPipeline
 from kasra.pipeline.output_pipeline import OutputDetectionPipeline
-from kasra.pipeline.batch_pipeline import BatchScanPipeline
 from kasra.pipeline.behavior_pipeline import BehaviorDetectionPipeline
+from kasra.scanner import CodeReviewScanner
+from kasra.scanner.models import CodeReviewResult
 
 
 class RuleEngine:
-    """Top-level Kasra L3 Rule Engine.
+    """Top-level Kasra Rule Engine.
 
     Manages the lifecycle:
       1. **Configuration** — loaded from YAML + env vars via ``GlobalConfig``.
@@ -90,8 +91,10 @@ class RuleEngine:
         # Pipeline instances (created lazily)
         self._input_pipeline: InputDetectionPipeline | None = None
         self._output_pipeline: OutputDetectionPipeline | None = None
-        self._batch_pipeline: BatchScanPipeline | None = None
+        # batch_pipeline removed — use CodeReviewScanner for code review,
+        # or Path.read_text() + detect_input() to scan file contents.
         self._behavior_pipeline: BehaviorDetectionPipeline | None = None
+        self._code_review_scanner: CodeReviewScanner | None = None
 
         self._loaded = False
         self._rule_count = 0
@@ -301,51 +304,6 @@ class RuleEngine:
         self._audit_if_enabled(result, stage="output", **context_kwargs)
         return result
 
-    def scan_file(
-        self,
-        file_path: str | os.PathLike,
-        preprocess: bool = True,
-    ) -> AggregatedResult:
-        """Scan a single file for rule violations.
-
-        Delegates to :meth:`BatchScanPipeline.scan_file` which handles
-        file reading, encoding detection, and content normalization.
-        Results are automatically audited if logging is enabled.
-
-        Args:
-            file_path: Path to the file to scan.
-            preprocess: Whether to apply content normalization.
-
-        Returns:
-            An ``AggregatedResult`` for the file.
-        """
-        pipeline = self._get_batch_pipeline()
-        result = pipeline.scan_file(str(file_path), preprocess=preprocess)
-        self._audit_if_enabled(result, stage="batch", file_path=str(file_path))
-        return result
-
-    def scan_directory(
-        self,
-        dir_path: str | os.PathLike,
-        preprocess: bool = True,
-    ) -> list[AggregatedResult]:
-        """Scan all files in a directory for rule violations.
-
-        Args:
-            dir_path: Path to the directory to scan.
-            preprocess: Whether to apply content normalization.
-
-        Returns:
-            A list of ``AggregatedResult`` objects, one per scanned file.
-        """
-        pipeline = self._get_batch_pipeline()
-        results = pipeline.scan_directory(str(dir_path), preprocess=preprocess)
-        for result in results:
-            if result.triggered_rules:
-                file_path = result.metadata.get("file_path", str(dir_path))
-                self._audit_if_enabled(result, stage="batch", file_path=file_path)
-        return results
-
     def track_behavior(
         self,
         content: str,
@@ -374,6 +332,112 @@ class RuleEngine:
         )
         self._audit_if_enabled(result, stage="behavior", session_id=session_id, **context_kwargs)
         return result
+
+    # ------------------------------------------------------------------
+    # Runtime rule control (enable / disable)
+    # ------------------------------------------------------------------
+
+    def enable_rule(self, rule_id: str) -> None:
+        """Enable a rule at runtime.
+
+        The rule is re-enabled immediately in the pipeline indexes.
+        No reload required.
+
+        Args:
+            rule_id: The rule ID to enable.
+
+        Raises:
+            RuleNotFoundError: If the rule does not exist.
+        """
+        self._store.set_enabled(rule_id, enabled=True)
+
+    def disable_rule(self, rule_id: str) -> None:
+        """Disable a rule at runtime.
+
+        The rule is removed from pipeline queries immediately.
+        No reload required.
+
+        Args:
+            rule_id: The rule ID to disable.
+
+        Raises:
+            RuleNotFoundError: If the rule does not exist.
+        """
+        self._store.set_enabled(rule_id, enabled=False)
+
+    # ------------------------------------------------------------------
+    # Code review (CodeReviewScanner integration)
+    # ------------------------------------------------------------------
+
+    def review_code(
+        self,
+        path: str | os.PathLike,
+    ) -> CodeReviewResult:
+        """Run a code review security scan on a file or directory.
+
+        Delegates to :class:`CodeReviewScanner` under the hood, loading
+        rules from ``_code-review-rules.json`` on first call.
+
+        Args:
+            path: Path to a file or directory to scan.
+
+        Returns:
+            A ``CodeReviewResult`` containing all findings.
+        """
+        scanner = self._get_code_review_scanner()
+        if not scanner.rules:
+            scanner.load_rules()
+        return scanner.scan(str(path))
+
+    def get_code_review_rules(self) -> list[dict[str, Any]]:
+        """Return the loaded code review rule definitions.
+
+        Returns:
+            A list of rule dicts (empty if ``review_code()`` has not
+            been called yet).
+        """
+        scanner = self._get_code_review_scanner()
+        if not scanner.rules:
+            try:
+                scanner.load_rules()
+            except FileNotFoundError:
+                pass
+        return scanner.rules
+
+    def get_code_review_rule_ids(self) -> list[str]:
+        """Return the list of loaded code review rule IDs."""
+        return [r.get("id", "UNKNOWN") for r in self.get_code_review_rules()]
+
+    def enable_code_review_rule(self, rule_id: str) -> None:
+        """Re-enable a code review rule at runtime.
+
+        Args:
+            rule_id: The rule ID to enable (e.g. ``"SEC-01"``).
+
+        Raises:
+            ValueError: If the rule ID is not found.
+        """
+        scanner = self._get_code_review_scanner()
+        scanner.enable_rule(rule_id)
+
+    def disable_code_review_rule(self, rule_id: str) -> None:
+        """Disable a code review rule at runtime.
+
+        The rule will be skipped in subsequent ``review_code()`` calls.
+
+        Args:
+            rule_id: The rule ID to disable (e.g. ``"SEC-01"``).
+
+        Raises:
+            ValueError: If the rule ID is not found.
+        """
+        scanner = self._get_code_review_scanner()
+        scanner.disable_rule(rule_id)
+
+    @property
+    def disabled_code_review_rule_ids(self) -> set[str]:
+        """Return the set of currently disabled code review rule IDs."""
+        return set(self._get_code_review_scanner().disabled_rule_ids)
 
     # ------------------------------------------------------------------
     # Direct rule access
@@ -435,16 +499,6 @@ class RuleEngine:
             )
         return self._output_pipeline
 
-    def _get_batch_pipeline(self) -> BatchScanPipeline:
-        if self._batch_pipeline is None:
-            self._batch_pipeline = BatchScanPipeline(
-                registry=self._registry,
-                runner=self._runner,
-                action_registry=self._action_registry,
-                hook_registry=self._hook_registry,
-            )
-        return self._batch_pipeline
-
     def _get_behavior_pipeline(self) -> BehaviorDetectionPipeline:
         if self._behavior_pipeline is None:
             self._behavior_pipeline = BehaviorDetectionPipeline(
@@ -454,6 +508,14 @@ class RuleEngine:
                 hook_registry=self._hook_registry,
             )
         return self._behavior_pipeline
+
+    def _get_code_review_scanner(self) -> CodeReviewScanner:
+        if self._code_review_scanner is None:
+            from kasra.utils.package import find_data_dir
+
+            rules_path = find_data_dir("rules") / "_code-review-rules.json"
+            self._code_review_scanner = CodeReviewScanner(rules_path=rules_path)
+        return self._code_review_scanner
 
     def _init_action_registry(self) -> None:
         """Register all seven standard action executors."""
