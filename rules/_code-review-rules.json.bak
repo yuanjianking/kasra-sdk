@@ -19,8 +19,8 @@
       ],
       "priority": "P0",
       "detection_method": "regex",
-      "fp_risk": "medium",
-      "performance": "low",
+      "fp_risk": "中",
+      "performance": "低",
       "detection": {
         "mode": "any",
         "patterns": [
@@ -121,8 +121,8 @@
       ],
       "priority": "P0",
       "detection_method": "regex",
-      "fp_risk": "medium",
-      "performance": "low",
+      "fp_risk": "中",
+      "performance": "低",
       "detection": {
         "mode": "any",
         "patterns": [
@@ -174,8 +174,8 @@
       ],
       "priority": "P0",
       "detection_method": "regex",
-      "fp_risk": "medium",
-      "performance": "low",
+      "fp_risk": "中",
+      "performance": "低",
       "detection": {
         "mode": "any",
         "patterns": [
@@ -216,8 +216,8 @@
       ],
       "priority": "P0",
       "detection_method": "regex",
-      "fp_risk": "medium",
-      "performance": "low",
+      "fp_risk": "中",
+      "performance": "低",
       "detection": {
         "mode": "any",
         "patterns": [
@@ -256,8 +256,8 @@
       ],
       "priority": "P0",
       "detection_method": "Python checker",
-      "fp_risk": "medium",
-      "performance": "medium",
+      "fp_risk": "中",
+      "performance": "中",
       "detection": {
         "mode": "any",
         "patterns": []
@@ -283,8 +283,8 @@
       ],
       "priority": "P0",
       "detection_method": "Python checker",
-      "fp_risk": "medium",
-      "performance": "medium",
+      "fp_risk": "中",
+      "performance": "中",
       "detection": {
         "mode": "any",
         "patterns": []
@@ -309,8 +309,8 @@
       ],
       "priority": "P0",
       "detection_method": "Python checker",
-      "fp_risk": "low",
-      "performance": "low",
+      "fp_risk": "低",
+      "performance": "低",
       "detection": {
         "mode": "any",
         "patterns": []
@@ -335,8 +335,8 @@
       ],
       "priority": "P0",
       "detection_method": "Python checker",
-      "fp_risk": "low",
-      "performance": "low",
+      "fp_risk": "低",
+      "performance": "低",
       "detection": {
         "mode": "any",
         "patterns": []
@@ -361,8 +361,8 @@
       ],
       "priority": "P0",
       "detection_method": "Python checker",
-      "fp_risk": "low",
-      "performance": "low",
+      "fp_risk": "低",
+      "performance": "低",
       "detection": {
         "mode": "any",
         "patterns": []
@@ -387,8 +387,8 @@
       ],
       "priority": "P0",
       "detection_method": "Python checker",
-      "fp_risk": "medium",
-      "performance": "medium",
+      "fp_risk": "中",
+      "performance": "中",
       "detection": {
         "mode": "any",
         "patterns": []
@@ -413,8 +413,8 @@
       ],
       "priority": "P0",
       "detection_method": "Python checker",
-      "fp_risk": "medium",
-      "performance": "medium",
+      "fp_risk": "中",
+      "performance": "中",
       "detection": {
         "mode": "any",
         "patterns": []
@@ -439,8 +439,8 @@
       ],
       "priority": "P0",
       "detection_method": "Python checker",
-      "fp_risk": "medium",
-      "performance": "low",
+      "fp_risk": "中",
+      "performance": "低",
       "detection": {
         "mode": "any",
         "patterns": []
@@ -463,8 +463,8 @@
       ],
       "priority": "P0",
       "detection_method": "Python checker",
-      "fp_risk": "low",
-      "performance": "low",
+      "fp_risk": "低",
+      "performance": "低",
       "detection": {
         "mode": "any",
         "patterns": []
@@ -494,8 +494,8 @@
       ],
       "priority": "P0",
       "detection_method": "key=value + regex",
-      "fp_risk": "low",
-      "performance": "low",
+      "fp_risk": "低",
+      "performance": "低",
       "detection": {
         "mode": "any",
         "patterns": [
@@ -557,8 +557,8 @@
       ],
       "priority": "P0",
       "detection_method": "Python checker (CVE database)",
-      "fp_risk": "low",
-      "performance": "medium",
+      "fp_risk": "低",
+      "performance": "中",
       "detection": {
         "mode": "any",
         "patterns": []
@@ -584,8 +584,8 @@
       ],
       "priority": "P0",
       "detection_method": "Python checker",
-      "fp_risk": "medium",
-      "performance": "medium",
+      "fp_risk": "中",
+      "performance": "中",
       "detection": {
         "mode": "any",
         "patterns": []
@@ -611,8 +611,8 @@
       ],
       "priority": "P0",
       "detection_method": "Python checker",
-      "fp_risk": "low",
-      "performance": "low",
+      "fp_risk": "低",
+      "performance": "低",
       "detection": {
         "mode": "any",
         "patterns": []
@@ -627,8 +627,8 @@
       "action": "warn",
       "priority": "P1",
       "detection_method": "regex (Python checker pending)",
-      "fp_risk": "medium",
-      "performance": "medium",
+      "fp_risk": "中",
+      "performance": "中",
       "target_files": [
         "**/*.py",
         "**/*.js",
@@ -664,8 +664,8 @@
       "action": "warn",
       "priority": "P1",
       "detection_method": "regex (Python checker pending)",
-      "fp_risk": "low",
-      "performance": "low",
+      "fp_risk": "低",
+      "performance": "低",
       "target_files": [
         "**/*.py",
         "**/*.java",
@@ -695,8 +695,8 @@
       "action": "warn",
       "priority": "P1",
       "detection_method": "regex (Python checker pending)",
-      "fp_risk": "medium",
-      "performance": "medium",
+      "fp_risk": "中",
+      "performance": "中",
       "target_files": [
         "**/*.py",
         "**/*.java",
@@ -732,8 +732,8 @@
       "action": "warn",
       "priority": "P1",
       "detection_method": "regex (Python checker pending)",
-      "fp_risk": "medium",
-      "performance": "medium",
+      "fp_risk": "中",
+      "performance": "中",
       "target_files": [
         "**/*.js",
         "**/*.ts",
@@ -765,8 +765,8 @@
       "action": "warn",
       "priority": "P1",
       "detection_method": "key=value + regex",
-      "fp_risk": "low",
-      "performance": "low",
+      "fp_risk": "低",
+      "performance": "低",
       "target_files": [
         "**/*.py",
         "**/*.js",
@@ -809,8 +809,8 @@
       "action": "warn",
       "priority": "P1",
       "detection_method": "Python checker",
-      "fp_risk": "high",
-      "performance": "high",
+      "fp_risk": "高",
+      "performance": "高",
       "target_files": [
         "**/*.py",
         "**/*.js",
@@ -835,8 +835,8 @@
       "action": "warn",
       "priority": "P1",
       "detection_method": "Python checker",
-      "fp_risk": "medium",
-      "performance": "medium",
+      "fp_risk": "中",
+      "performance": "中",
       "target_files": [
         "**/*.py",
         "**/*.js",
@@ -861,8 +861,8 @@
       "action": "warn",
       "priority": "P1",
       "detection_method": "Python checker",
-      "fp_risk": "medium",
-      "performance": "medium",
+      "fp_risk": "中",
+      "performance": "中",
       "target_files": [
         "**/*.py",
         "**/*.js",
@@ -887,8 +887,8 @@
       "action": "warn",
       "priority": "P1",
       "detection_method": "Python checker",
-      "fp_risk": "low",
-      "performance": "low",
+      "fp_risk": "低",
+      "performance": "低",
       "target_files": [
         "**/*.py",
         "**/*.js",
@@ -913,8 +913,8 @@
       "action": "warn",
       "priority": "P1",
       "detection_method": "Python checker",
-      "fp_risk": "low",
-      "performance": "low",
+      "fp_risk": "低",
+      "performance": "低",
       "target_files": [
         "**/*.py",
         "**/*.js",
@@ -940,8 +940,8 @@
       "action": "warn",
       "priority": "P1",
       "detection_method": "Python checker",
-      "fp_risk": "low",
-      "performance": "low",
+      "fp_risk": "低",
+      "performance": "低",
       "target_files": [
         "**/*.py",
         "**/*.js",
@@ -966,8 +966,8 @@
       "action": "warn",
       "priority": "P1",
       "detection_method": "Python checker",
-      "fp_risk": "low",
-      "performance": "low",
+      "fp_risk": "低",
+      "performance": "低",
       "target_files": [
         "**/*.py",
         "**/*.js",
@@ -992,8 +992,8 @@
       "action": "warn",
       "priority": "P1",
       "detection_method": "regex",
-      "fp_risk": "low",
-      "performance": "low",
+      "fp_risk": "低",
+      "performance": "低",
       "target_files": [
         "**/*.sh",
         "**/*.bash",
@@ -1032,8 +1032,8 @@
       "action": "warn",
       "priority": "P1",
       "detection_method": "key=value + regex",
-      "fp_risk": "low",
-      "performance": "low",
+      "fp_risk": "低",
+      "performance": "低",
       "target_files": [
         "**/*.py",
         "**/*.js",
@@ -1073,8 +1073,8 @@
       "action": "warn",
       "priority": "P1",
       "detection_method": "regex",
-      "fp_risk": "low",
-      "performance": "low",
+      "fp_risk": "低",
+      "performance": "低",
       "target_files": [
         "**/*.py",
         "**/*.js",
@@ -1119,8 +1119,8 @@
       "action": "warn",
       "priority": "P1",
       "detection_method": "regex",
-      "fp_risk": "medium",
-      "performance": "low",
+      "fp_risk": "中",
+      "performance": "低",
       "target_files": [
         "**/ci.yml",
         "**/cd.yml",
@@ -1158,8 +1158,8 @@
       "action": "warn",
       "priority": "P1",
       "detection_method": "config (Dockerfile)",
-      "fp_risk": "low",
-      "performance": "low",
+      "fp_risk": "低",
+      "performance": "低",
       "target_files": [
         "**/Dockerfile",
         "**/Dockerfile.*"
@@ -1194,8 +1194,8 @@
       "action": "warn",
       "priority": "P1",
       "detection_method": "config (YAML) + regex",
-      "fp_risk": "low",
-      "performance": "low",
+      "fp_risk": "低",
+      "performance": "低",
       "target_files": [
         "**/*.yaml",
         "**/*.yml"
@@ -1245,8 +1245,8 @@
       "action": "warn",
       "priority": "P1",
       "detection_method": "regex",
-      "fp_risk": "low",
-      "performance": "low",
+      "fp_risk": "低",
+      "performance": "低",
       "target_files": [
         "**/*.tf",
         "**/*.tfvars"
@@ -1271,8 +1271,8 @@
       "action": "warn",
       "priority": "P2",
       "detection_method": "regex (Python checker pending)",
-      "fp_risk": "low",
-      "performance": "low",
+      "fp_risk": "低",
+      "performance": "低",
       "target_files": [
         "**/*.py",
         "**/*.js",
@@ -1300,8 +1300,8 @@
       "action": "warn",
       "priority": "P2",
       "detection_method": "regex",
-      "fp_risk": "low",
-      "performance": "low",
+      "fp_risk": "低",
+      "performance": "低",
       "target_files": [
         "**/*.py",
         "**/*.js",
@@ -1339,8 +1339,8 @@
       "action": "warn",
       "priority": "P2",
       "detection_method": "regex (Python checker pending)",
-      "fp_risk": "medium",
-      "performance": "medium",
+      "fp_risk": "中",
+      "performance": "中",
       "target_files": [
         "**/*.py",
         "**/*.js",
@@ -1371,8 +1371,8 @@
       "action": "warn",
       "priority": "P2",
       "detection_method": "regex (Python checker pending)",
-      "fp_risk": "medium",
-      "performance": "high",
+      "fp_risk": "中",
+      "performance": "高",
       "target_files": [
         "**/*.py",
         "**/*.js",
@@ -1401,8 +1401,8 @@
       "action": "warn",
       "priority": "P2",
       "detection_method": "regex (Python checker pending)",
-      "fp_risk": "medium",
-      "performance": "medium",
+      "fp_risk": "中",
+      "performance": "中",
       "target_files": [
         "**/*.py",
         "**/*.js",
@@ -1431,8 +1431,8 @@
       "action": "warn",
       "priority": "P2",
       "detection_method": "regex (Python checker pending)",
-      "fp_risk": "medium",
-      "performance": "medium",
+      "fp_risk": "中",
+      "performance": "中",
       "target_files": [
         "**/*.go",
         "**/*.py",
@@ -1466,8 +1466,8 @@
       "action": "warn",
       "priority": "P2",
       "detection_method": "regex (Python checker pending)",
-      "fp_risk": "medium",
-      "performance": "medium",
+      "fp_risk": "中",
+      "performance": "中",
       "target_files": [
         "**/*.py",
         "**/*.js",
@@ -1496,8 +1496,8 @@
       "action": "warn",
       "priority": "P2",
       "detection_method": "regex (Python checker pending)",
-      "fp_risk": "low",
-      "performance": "low",
+      "fp_risk": "低",
+      "performance": "低",
       "target_files": [
         "**/*.py",
         "**/*.java",
@@ -1525,8 +1525,8 @@
       "action": "warn",
       "priority": "P2",
       "detection_method": "regex",
-      "fp_risk": "low",
-      "performance": "low",
+      "fp_risk": "低",
+      "performance": "低",
       "target_files": [
         "**/*.html",
         "**/*.htm",
@@ -1554,8 +1554,8 @@
       "action": "warn",
       "priority": "P2",
       "detection_method": "regex (Python checker pending)",
-      "fp_risk": "medium",
-      "performance": "low",
+      "fp_risk": "中",
+      "performance": "低",
       "target_files": [
         "**/*.py",
         "**/*.js",
@@ -1585,8 +1585,8 @@
       "action": "warn",
       "priority": "P2",
       "detection_method": "Python checker",
-      "fp_risk": "high",
-      "performance": "high",
+      "fp_risk": "高",
+      "performance": "高",
       "target_files": [
         "**/*.py",
         "**/*.js",
@@ -1610,8 +1610,8 @@
       "action": "warn",
       "priority": "P2",
       "detection_method": "Python checker",
-      "fp_risk": "medium",
-      "performance": "medium",
+      "fp_risk": "中",
+      "performance": "中",
       "target_files": [
         "**/*.py",
         "**/*.js",
@@ -1634,8 +1634,8 @@
       "action": "warn",
       "priority": "P2",
       "detection_method": "Python checker",
-      "fp_risk": "low",
-      "performance": "low",
+      "fp_risk": "低",
+      "performance": "低",
       "target_files": [
         "**/*.py",
         "**/*.java",
@@ -1658,8 +1658,8 @@
       "action": "warn",
       "priority": "P2",
       "detection_method": "Python checker",
-      "fp_risk": "medium",
-      "performance": "medium",
+      "fp_risk": "中",
+      "performance": "中",
       "target_files": [
         "**/*.c",
         "**/*.cpp",
@@ -1682,8 +1682,8 @@
       "action": "warn",
       "priority": "P2",
       "detection_method": "Python checker",
-      "fp_risk": "medium",
-      "performance": "medium",
+      "fp_risk": "中",
+      "performance": "中",
       "target_files": [
         "**/*.py",
         "**/*.js",
@@ -1708,8 +1708,8 @@
       "action": "warn",
       "priority": "P2",
       "detection_method": "regex (Python checker pending)",
-      "fp_risk": "low",
-      "performance": "low",
+      "fp_risk": "低",
+      "performance": "低",
       "target_files": [
         "**/*.kt",
         "**/*.java",
@@ -1736,8 +1736,8 @@
       "action": "warn",
       "priority": "P2",
       "detection_method": "regex (Python checker pending)",
-      "fp_risk": "low",
-      "performance": "low",
+      "fp_risk": "低",
+      "performance": "低",
       "target_files": [
         "**/*.kt",
         "**/*.java",
@@ -1764,8 +1764,8 @@
       "action": "warn",
       "priority": "P2",
       "detection_method": "regex (Python checker pending)",
-      "fp_risk": "medium",
-      "performance": "low",
+      "fp_risk": "中",
+      "performance": "低",
       "target_files": [
         "**/AndroidManifest.xml",
         "**/*.kt",
@@ -1793,8 +1793,8 @@
       "action": "warn",
       "priority": "P2",
       "detection_method": "regex",
-      "fp_risk": "low",
-      "performance": "low",
+      "fp_risk": "低",
+      "performance": "低",
       "target_files": [
         "**/AndroidManifest.xml"
       ],
@@ -1818,8 +1818,8 @@
       "action": "warn",
       "priority": "P2",
       "detection_method": "regex (Python checker pending)",
-      "fp_risk": "low",
-      "performance": "low",
+      "fp_risk": "低",
+      "performance": "低",
       "target_files": [
         "**/*.kt",
         "**/*.java",
@@ -1846,8 +1846,8 @@
       "action": "warn",
       "priority": "P2",
       "detection_method": "regex",
-      "fp_risk": "low",
-      "performance": "low",
+      "fp_risk": "低",
+      "performance": "低",
       "target_files": [
         "**/*.kt",
         "**/*.java"
@@ -1872,8 +1872,8 @@
       "action": "warn",
       "priority": "P2",
       "detection_method": "regex (Python checker pending)",
-      "fp_risk": "medium",
-      "performance": "low",
+      "fp_risk": "中",
+      "performance": "低",
       "target_files": [
         "**/*.kt",
         "**/*.java",
@@ -1902,8 +1902,8 @@
       "action": "warn",
       "priority": "P2",
       "detection_method": "config (YAML) + regex",
-      "fp_risk": "low",
-      "performance": "low",
+      "fp_risk": "低",
+      "performance": "低",
       "target_files": [
         "**/docker-compose.yml",
         "**/docker-compose.yaml"
@@ -1948,8 +1948,8 @@
       "action": "warn",
       "priority": "P2",
       "detection_method": "config (YAML) + regex",
-      "fp_risk": "low",
-      "performance": "low",
+      "fp_risk": "低",
+      "performance": "低",
       "target_files": [
         "**/Dockerfile",
         "**/Dockerfile.*",
@@ -1981,8 +1981,8 @@
       "action": "warn",
       "priority": "P2",
       "detection_method": "config (YAML) + regex",
-      "fp_risk": "low",
-      "performance": "low",
+      "fp_risk": "低",
+      "performance": "低",
       "target_files": [
         "**/*.yaml",
         "**/*.yml"
@@ -2012,8 +2012,8 @@
       "action": "warn",
       "priority": "P2",
       "detection_method": "regex",
-      "fp_risk": "low",
-      "performance": "low",
+      "fp_risk": "低",
+      "performance": "低",
       "target_files": [
         "**/*.yaml",
         "**/*.yml"
@@ -2043,8 +2043,8 @@
       "action": "warn",
       "priority": "P2",
       "detection_method": "regex",
-      "fp_risk": "low",
-      "performance": "low",
+      "fp_risk": "低",
+      "performance": "低",
       "target_files": [
         "**/*.yaml",
         "**/*.yml"
@@ -2074,8 +2074,8 @@
       "action": "warn",
       "priority": "P2",
       "detection_method": "regex",
-      "fp_risk": "low",
-      "performance": "low",
+      "fp_risk": "低",
+      "performance": "低",
       "target_files": [
         "**/*.tf",
         "**/*.tfvars"
@@ -2105,8 +2105,8 @@
       "action": "warn",
       "priority": "P2",
       "detection_method": "regex",
-      "fp_risk": "low",
-      "performance": "low",
+      "fp_risk": "低",
+      "performance": "低",
       "target_files": [
         "**/*.tf",
         "**/*.tfvars"
@@ -2136,8 +2136,8 @@
       "action": "warn",
       "priority": "P2",
       "detection_method": "regex",
-      "fp_risk": "low",
-      "performance": "low",
+      "fp_risk": "低",
+      "performance": "低",
       "target_files": [
         "**/*.tf",
         "**/*.tfvars"
@@ -2167,8 +2167,8 @@
       "action": "warn",
       "priority": "P2",
       "detection_method": "config (YAML) + regex",
-      "fp_risk": "low",
-      "performance": "low",
+      "fp_risk": "低",
+      "performance": "低",
       "target_files": [
         "**/*.yml",
         "**/*.yaml",
@@ -2204,8 +2204,8 @@
       "action": "warn",
       "priority": "P2",
       "detection_method": "config (YAML)",
-      "fp_risk": "low",
-      "performance": "low",
+      "fp_risk": "低",
+      "performance": "低",
       "target_files": [
         "**/Chart.yaml",
         "**/values.yaml",
@@ -2233,8 +2233,8 @@
       "action": "warn",
       "priority": "P2",
       "detection_method": "regex",
-      "fp_risk": "low",
-      "performance": "low",
+      "fp_risk": "低",
+      "performance": "低",
       "target_files": [
         "**/template.yaml",
         "**/template.yml",
@@ -2268,8 +2268,8 @@
       "action": "warn",
       "priority": "P2",
       "detection_method": "regex",
-      "fp_risk": "medium",
-      "performance": "low",
+      "fp_risk": "中",
+      "performance": "低",
       "target_files": [
         "**/serverless.yml",
         "**/template.yaml",
@@ -2300,8 +2300,8 @@
       "action": "warn",
       "priority": "P2",
       "detection_method": "regex",
-      "fp_risk": "low",
-      "performance": "low",
+      "fp_risk": "低",
+      "performance": "低",
       "target_files": [
         "**/Pulumi.yaml",
         "**/Pulumi.*.yaml",
@@ -2328,8 +2328,8 @@
       "action": "warn",
       "priority": "P2",
       "detection_method": "regex",
-      "fp_risk": "medium",
-      "performance": "medium",
+      "fp_risk": "中",
+      "performance": "中",
       "target_files": [
         "**/*.py",
         "**/*.js",
@@ -2362,8 +2362,8 @@
       "action": "warn",
       "priority": "P0",
       "detection_method": "Python checker",
-      "fp_risk": "high",
-      "performance": "low",
+      "fp_risk": "高",
+      "performance": "低",
       "target_files": [
         "**/*.py",
         "**/*.js",
@@ -2385,8 +2385,8 @@
       "action": "warn",
       "priority": "P2",
       "detection_method": "Python checker",
-      "fp_risk": "high",
-      "performance": "low",
+      "fp_risk": "高",
+      "performance": "低",
       "target_files": [
         "**/*.py",
         "**/*.js",
@@ -2408,8 +2408,8 @@
       "action": "warn",
       "priority": "P2",
       "detection_method": "Python checker",
-      "fp_risk": "low",
-      "performance": "low",
+      "fp_risk": "低",
+      "performance": "低",
       "target_files": [
         "**/package.json",
         "**/requirements.txt",
@@ -2429,8 +2429,8 @@
       "action": "warn",
       "priority": "P2",
       "detection_method": "Python checker",
-      "fp_risk": "low",
-      "performance": "low",
+      "fp_risk": "低",
+      "performance": "低",
       "target_files": [
         "**/*.py",
         "**/*.js",
@@ -2453,8 +2453,8 @@
       "action": "warn",
       "priority": "P2",
       "detection_method": "Python checker",
-      "fp_risk": "medium",
-      "performance": "low",
+      "fp_risk": "中",
+      "performance": "低",
       "target_files": [
         "**/*.py",
         "**/*.js",
@@ -2478,8 +2478,8 @@
       "action": "warn",
       "priority": "P2",
       "detection_method": "Python checker",
-      "fp_risk": "high",
-      "performance": "low",
+      "fp_risk": "高",
+      "performance": "低",
       "target_files": [
         "**/*.java",
         "**/*.go",
@@ -2501,8 +2501,8 @@
       "action": "warn",
       "priority": "P2",
       "detection_method": "Python checker",
-      "fp_risk": "medium",
-      "performance": "low",
+      "fp_risk": "中",
+      "performance": "低",
       "target_files": [
         "**/*.py",
         "**/*.js",
@@ -2528,8 +2528,8 @@
       "action": "warn",
       "priority": "P2",
       "detection_method": "Python checker",
-      "fp_risk": "low",
-      "performance": "low",
+      "fp_risk": "低",
+      "performance": "低",
       "target_files": [
         "**/*.py",
         "**/*.js",
@@ -2553,8 +2553,8 @@
       "action": "warn",
       "priority": "P2",
       "detection_method": "Python checker",
-      "fp_risk": "medium",
-      "performance": "low",
+      "fp_risk": "中",
+      "performance": "低",
       "target_files": [
         "**/*.py",
         "**/*.js",
@@ -2580,8 +2580,8 @@
       "action": "warn",
       "priority": "P2",
       "detection_method": "Python checker",
-      "fp_risk": "medium",
-      "performance": "low",
+      "fp_risk": "中",
+      "performance": "低",
       "target_files": [
         "**/*.py",
         "**/*.js",
@@ -2605,8 +2605,8 @@
       "action": "warn",
       "priority": "P2",
       "detection_method": "Python checker",
-      "fp_risk": "low",
-      "performance": "low",
+      "fp_risk": "低",
+      "performance": "低",
       "target_files": [
         "**/*.py",
         "**/*.js",
