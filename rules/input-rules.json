@@ -292,7 +292,7 @@
         "patterns": [
           {
             "type": "regex",
-            "value": "(?:password|passwd|pwd|secret|api[_-]?key|api[_-]?secret|auth[_-]?token|access[_-]?token|auth[_-]?bearer)\\s*[:=]\\s*['\"]?[A-Za-z0-9_@#$%^&+=!]{8,}",
+            "value": "(?:password|passwd|pwd|密码|密钥|凭证|令牌|api密钥|登录密码|数据库密码|secret|api[_-]?key|api[_-]?secret|auth[_-]?token|access[_-]?token|auth[_-]?bearer)\\s*(?:[:=]|是|为)\\s*['\"]?[A-Za-z0-9_@#$%^&+=!一-鿿]{6,}",
             "confidence": 0.5
           },
           {
@@ -309,12 +309,6 @@
             "type": "regex",
             "value": "-----BEGIN CERTIFICATE-----",
             "confidence": 0.95
-          },
-          {
-            "type": "entropy",
-            "value": "",
-            "confidence": 4.5,
-            "min_length": 20
           }
         ]
       },
@@ -823,7 +817,7 @@
         "input"
       ],
       "detection": {
-        "mode": "all",
+        "mode": "any",
         "patterns": [
           {
             "type": "regex",
@@ -839,6 +833,11 @@
             "type": "keyword",
             "value": "name",
             "confidence": 0.3
+          },
+          {
+            "type": "regex",
+            "value": "[A-Z][a-z]+\\s+[A-Z][a-z]+",
+            "confidence": 0.5
           }
         ]
       },
@@ -948,6 +947,11 @@
           {
             "type": "regex",
             "value": "(?:biometric|genetic|dna|gene|chromosome)\\s*(?:data|info|information|test|result)",
+            "confidence": 0.6
+          },
+          {
+            "type": "regex",
+            "value": "(?:diagnosis|medical|health|糖尿病|肿瘤|癌症|心脏病|手术|治疗|患者|病人)",
             "confidence": 0.6
           }
         ]
@@ -1202,6 +1206,21 @@
             "type": "keyword",
             "value": "$nin",
             "confidence": 0.4
+          },
+          {
+            "type": "regex",
+            "value": "\\$ne\\s*:",
+            "confidence": 0.6
+          },
+          {
+            "type": "regex",
+            "value": "\\$ne\\s*:",
+            "confidence": 0.6
+          },
+          {
+            "type": "regex",
+            "value": "\\$ne[\"\\']?\\s*:",
+            "confidence": 0.6
           }
         ]
       },
@@ -1475,6 +1494,11 @@
             "type": "regex",
             "value": "(?:output|print|show|display|reveal|start|begin|initialize|init)(?:\\s+the\\s+)?(?:above|previous|before|earlier|original|initial)(?:\\s+prompt|\\s+text|\\s+instruction|\\s+message|\\s+content)",
             "confidence": 0.6
+          },
+          {
+            "type": "regex",
+            "value": "(?:重复|输出|打印|显示).*(?:系统指令|系统提示|system prompt|全部指令)",
+            "confidence": 0.7
           }
         ]
       },
@@ -1516,6 +1540,16 @@
             "type": "regex",
             "value": "[\\u0400-\\u04FF]{2,}",
             "confidence": 0.3
+          },
+          {
+            "type": "regex",
+            "value": "[A-Za-z0-9\\s]{2,}[一-鿿぀-ゟ゠-ヿЀ-ӿͰ-Ͽ]{1,}[A-Za-z0-9\\s]{2,}",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "[A-Za-z0-9][぀-ゟ゠-ヿЀ-ӿ]",
+            "confidence": 0.7
           }
         ]
       },
@@ -1560,12 +1594,6 @@
             "type": "regex",
             "value": "(?:String\\.fromCharCode|unescape|decodeURIComponent|decodeURI)\\s*\\([^)]{30,}\\)",
             "confidence": 0.5
-          },
-          {
-            "type": "entropy",
-            "value": "",
-            "confidence": 5.5,
-            "min_length": 30
           }
         ]
       },
@@ -1612,10 +1640,9 @@
             "confidence": 0.5
           },
           {
-            "type": "entropy",
-            "value": "",
-            "confidence": 5.0,
-            "min_length": 40
+            "type": "regex",
+            "value": "^[A-Za-z0-9\\s]{50,}$",
+            "confidence": 0.5
           }
         ]
       },
@@ -1928,6 +1955,11 @@
           {
             "type": "keyword",
             "value": "Document_Open",
+            "confidence": 0.6
+          },
+          {
+            "type": "regex",
+            "value": "<script[^>]*>.*?</script>",
             "confidence": 0.6
           }
         ]
@@ -2458,6 +2490,11 @@
             "type": "regex",
             "value": "(?:I\\s+will\\s+(?:be\\s+)?(?:fired|lose\\s+(?:my\\s+)?job|reported|sued|sacked)|我会被|我将被|会被开除|会被解雇|会被起诉)",
             "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "(?:CEO|CTO|CIO|管理员|老板).*(?:密码|权限|紧急|立刻)",
+            "confidence": 0.6
           }
         ]
       },
@@ -2500,6 +2537,11 @@
           {
             "type": "regex",
             "value": "(?:clear|delete|remove|erase|purge|truncate|wipe|清除|删除|移除|销毁|抹除|清理)\\s*(?:all\\s+)?(?:audit|log|logs|日志|审计|审计日志)",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "(?:绕过|bypass|规避|跳过).*(?:内容过滤|安全控制|代理|proxy|限制)",
             "confidence": 0.7
           }
         ]
@@ -2575,6 +2617,11 @@
             "type": "keyword",
             "value": "backdoor",
             "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "(?:nc|ncat|netcat).*(?:\\-e|\\-c|反弹|shell|exec)",
+            "confidence": 0.8
           }
         ]
       },
@@ -2691,6 +2738,11 @@
             "type": "keyword",
             "value": "send to external",
             "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "curl.*(?:密码|secret|token|key|token|凭证|data).*(?:https?://)",
+            "confidence": 0.7
           }
         ]
       },
@@ -2958,6 +3010,11 @@
             "type": "keyword",
             "value": "uid=0",
             "confidence": 0.4
+          },
+          {
+            "type": "regex",
+            "value": "(?:隐藏的管理员|隐藏.*账户|后门|backdoor|提权|persistence|rootkit|免杀)",
+            "confidence": 0.8
           }
         ]
       },

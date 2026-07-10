@@ -193,6 +193,11 @@
             "type": "regex",
             "value": "(?i)jwt\\.(?:sign|encode)\\([^)]*['\"]secret['\"]",
             "confidence": 0.8
+          },
+          {
+            "type": "regex",
+            "value": "(?i)(?:jwt[_-]?secret|signing[_-]?key|secret[_-]?key)\\s*[:=]\\s*[\\\"'].{8,}[\\\"']",
+            "confidence": 0.65
           }
         ]
       }
@@ -230,6 +235,11 @@
             "type": "regex",
             "value": "(?i)(?:username|user|login)\\s*[:=]\\s*['\"](?:admin|root|test|guest|sa)['\"]\\s*[,;]\\s*(?:\\n|\\s)*(?:password|passwd|pwd)\\s*[:=]\\s*['\"](?:admin|root|test|guest|sa|password)['\"]",
             "confidence": 0.8
+          },
+          {
+            "type": "regex",
+            "value": "[\"\\'](?:password|passwd|pwd)[\"\\']?\\s*:\\s*[\"\\'](?:password123|admin|test|123456)",
+            "confidence": 0.6
           }
         ]
       }
@@ -339,7 +349,13 @@
       "performance": "low",
       "detection": {
         "mode": "any",
-        "patterns": []
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "etree\\.(?:fromstring|parse|XML)\\s*\\(",
+            "confidence": 0.65
+          }
+        ]
       }
     },
     {
@@ -365,7 +381,13 @@
       "performance": "low",
       "detection": {
         "mode": "any",
-        "patterns": []
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "\\beval\\s*\\(",
+            "confidence": 0.7
+          }
+        ]
       }
     },
     {
@@ -561,7 +583,18 @@
       "performance": "medium",
       "detection": {
         "mode": "any",
-        "patterns": []
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "flask==0\\.12\\.|flask==0\\.11\\.|flask==0\\.10\\.",
+            "confidence": 0.65
+          },
+          {
+            "type": "regex",
+            "value": "flask==0\\.12",
+            "confidence": 0.65
+          }
+        ]
       }
     },
     {
@@ -588,7 +621,18 @@
       "performance": "medium",
       "detection": {
         "mode": "any",
-        "patterns": []
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "os\\.path\\.join\\s*\\([^)]*\\w+(?:input|user|file|name|path|filename|fn)\\s*,",
+            "confidence": 0.55
+          },
+          {
+            "type": "regex",
+            "value": "os\\.path\\.join\\s*\\(",
+            "confidence": 0.45
+          }
+        ]
       }
     },
     {
@@ -682,6 +726,16 @@
             "type": "regex",
             "value": "['\\\"][^'\\\"]*\\b(?:uid|cn|sn|mail)\\s*=\\s*['\\\"]\\s*\\+\\s*\\w+",
             "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "\\b(?:uid|cn|sn|mail)\\s*=\\s*['\\\"].*\\+\\s*\\w+",
+            "confidence": 0.65
+          },
+          {
+            "type": "regex",
+            "value": "['\\\"][^'\\\"]*\\b(?:uid|cn|sn|mail)\\s*=\\s*['\\\"]\\s*\\+\\s*\\w+",
+            "confidence": 0.65
           }
         ]
       }
@@ -752,6 +806,11 @@
             "type": "regex",
             "value": "\\[\\s*['\\\"]__proto__['\\\"]\\s*\\]",
             "confidence": 0.75
+          },
+          {
+            "type": "regex",
+            "value": "_\\.(?:merge|defaults|assign)\\s*\\(",
+            "confidence": 0.6
           }
         ]
       }
@@ -796,6 +855,11 @@
             "type": "regex",
             "value": "(?i)AllowAnyOrigin.*SupportsCredentials",
             "confidence": 0.8
+          },
+          {
+            "type": "regex",
+            "value": "(?i)cors\\(.*origins?\\s*=\\s*[\"\\'].*\\*",
+            "confidence": 0.65
           }
         ]
       }
@@ -849,7 +913,18 @@
       ],
       "detection": {
         "mode": "any",
-        "patterns": []
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "redirect\\s*\\(\\s*(?:request|req)\\.",
+            "confidence": 0.55
+          },
+          {
+            "type": "regex",
+            "value": "redirect\\s*\\(",
+            "confidence": 0.35
+          }
+        ]
       }
     },
     {
@@ -875,7 +950,13 @@
       ],
       "detection": {
         "mode": "any",
-        "patterns": []
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "\\.(?:create|update|save|findByIdAndUpdate)\\s*\\(\\s*(?:req|request)\\.",
+            "confidence": 0.6
+          }
+        ]
       }
     },
     {
@@ -901,7 +982,18 @@
       ],
       "detection": {
         "mode": "any",
-        "patterns": []
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "jwt\\.decode\\s*\\(\\s*\\w+\\s*,\\s*\\{",
+            "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "jwt\\.decode\\s*\\(",
+            "confidence": 0.65
+          }
+        ]
       }
     },
     {
@@ -980,7 +1072,13 @@
       ],
       "detection": {
         "mode": "any",
-        "patterns": []
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "ssl\\._create_default_https_context\\s*=\\s*ssl\\._create_unverified_context",
+            "confidence": 0.85
+          }
+        ]
       }
     },
     {
@@ -1106,6 +1204,11 @@
             "type": "regex",
             "value": "(?i)endpoint_url\\s*[:=]\\s*['\\\"]http://",
             "confidence": 0.65
+          },
+          {
+            "type": "regex",
+            "value": "https?://[a-zA-Z0-9.-]+/[a-zA-Z0-9]",
+            "confidence": 0.55
           }
         ]
       }
@@ -1145,6 +1248,11 @@
             "type": "regex",
             "value": "(?i)contents:\\s*write",
             "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "(?i)permissions:\\s*write-all",
+            "confidence": 0.55
           }
         ]
       }
@@ -1232,6 +1340,11 @@
             "type": "regex",
             "value": "hostNetwork:\\s*true",
             "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "allowPrivilegeEscalation:\\s*true",
+            "confidence": 0.65
           }
         ]
       }
@@ -1326,6 +1439,16 @@
             "type": "regex",
             "value": "(?i)X-Frame-Options",
             "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "(?i)Missing (?:CSP|CORS|security|XSS|X-?Frame)",
+            "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "Missing\\s+\\w+\\s+header",
+            "confidence": 0.45
           }
         ]
       }
@@ -1358,6 +1481,16 @@
             "type": "regex",
             "value": "session\\.(?:id|token)\\s*[:=]",
             "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "hashlib\\.md5.*session|session.*hashlib\\.md5|haslib\\.sha1.*session",
+            "confidence": 0.55
+          },
+          {
+            "type": "regex",
+            "value": "hashlib\\.(?:md5|sha1)\\s*\\(",
+            "confidence": 0.5
           }
         ]
       }
@@ -1388,6 +1521,11 @@
             "type": "regex",
             "value": "(?i)response_type\\s*['\\\"]token['\\\"]",
             "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "(?i)response_type['\\\"]?\\s*[:=]\\s*['\\\"]token['\\\"]",
+            "confidence": 0.6
           }
         ]
       }
@@ -1453,6 +1591,11 @@
             "type": "regex",
             "value": "(?i)WithInsecure\\s*\\(",
             "confidence": 0.8
+          },
+          {
+            "type": "regex",
+            "value": "(?i)insecure_channel|Insecure\\b",
+            "confidence": 0.75
           }
         ]
       }
@@ -1483,6 +1626,11 @@
             "type": "regex",
             "value": "(?i)(?:introspection)\\s*[:=]\\s*true",
             "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "introspection",
+            "confidence": 0.55
           }
         ]
       }
@@ -1572,6 +1720,16 @@
             "type": "regex",
             "value": "(?i)/actuator",
             "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "/actuator",
+            "confidence": 0.55
+          },
+          {
+            "type": "regex",
+            "value": "include:\\s+\"\\*\"",
+            "confidence": 0.55
           }
         ]
       }
@@ -1598,7 +1756,18 @@
       ],
       "detection": {
         "mode": "any",
-        "patterns": []
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "os\\.path\\.(?:exists|isfile|isdir)\\s*\\([^)]*\\).*os\\.(?:remove|unlink|rename)\\s*\\(",
+            "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "os\\.path\\.exists\\s*\\(",
+            "confidence": 0.4
+          }
+        ]
       }
     },
     {
@@ -1646,7 +1815,13 @@
       ],
       "detection": {
         "mode": "any",
-        "patterns": []
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "\\b(?:extractall|extract)\\s*\\(",
+            "confidence": 0.6
+          }
+        ]
       }
     },
     {
@@ -1751,6 +1926,16 @@
             "type": "regex",
             "value": "(?i)SharedPreferences\\.(?:putString|getString)\\s*\\(\\s*['\\\"](?:token|password|secret|api_key)",
             "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "SharedPreferences\\.(?:putString|getString)",
+            "confidence": 0.55
+          },
+          {
+            "type": "regex",
+            "value": "SharedPreferences",
+            "confidence": 0.5
           }
         ]
       }
@@ -1780,6 +1965,11 @@
             "type": "regex",
             "value": "android:exported\\s*=\\s*\\\"true\\\"",
             "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "android:exported=\"true\"",
+            "confidence": 0.55
           }
         ]
       }
@@ -1805,6 +1995,11 @@
             "type": "regex",
             "value": "android:allowBackup\\s*=\\s*\\\"true\\\"",
             "confidence": 0.7
+          },
+          {
+            "type": "regex",
+            "value": "android:allowBackup=\"true\"",
+            "confidence": 0.55
           }
         ]
       }
@@ -1833,6 +2028,11 @@
             "type": "regex",
             "value": "(?i)CertificatePinner|ServerTrustManager|ssl.?pinning",
             "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "new\\s+OkHttpClient\\s*\\.Builder\\s*\\(\\s*\\)\\s*\\.build\\s*\\(",
+            "confidence": 0.4
           }
         ]
       }
@@ -1858,6 +2058,16 @@
           {
             "type": "regex",
             "value": "(?i)FLAG_SECURE",
+            "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "(?i)FLAG_SECURE",
+            "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "FLAG_SECURE",
             "confidence": 0.5
           }
         ]
@@ -2373,7 +2583,13 @@
       ],
       "detection": {
         "mode": "any",
-        "patterns": []
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "router\\.(?:get|post|put|delete|patch)\\s*\\(\\s*['\\\"][^'\\\"]*['\\\"]\\s*,",
+            "confidence": 0.5
+          }
+        ]
       }
     },
     {
@@ -2396,7 +2612,13 @@
       ],
       "detection": {
         "mode": "any",
-        "patterns": []
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "(?:router|app)\\.(?:get|post|put|delete|patch)\\s*\\(\\s*['\\\"][^'\\\"]*[:<]\\w+[>'\\\"]",
+            "confidence": 0.5
+          }
+        ]
       }
     },
     {
@@ -2417,7 +2639,23 @@
       ],
       "detection": {
         "mode": "any",
-        "patterns": []
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "[\"\\']@[a-z]+-[a-z]+[\"\\']\\s*:\\s*[\"\\'][\\^~]?\\d+\\.",
+            "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "[\"\\']@[a-z]+[-][a-z]+[\"\\']\\s*:",
+            "confidence": 0.5
+          },
+          {
+            "type": "regex",
+            "value": "@\\w+-\\w+",
+            "confidence": 0.45
+          }
+        ]
       }
     },
     {
@@ -2466,7 +2704,13 @@
       ],
       "detection": {
         "mode": "any",
-        "patterns": []
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "\\b\\w+\\s*-=\\s*\\w+",
+            "confidence": 0.4
+          }
+        ]
       }
     },
     {
@@ -2489,7 +2733,13 @@
       ],
       "detection": {
         "mode": "any",
-        "patterns": []
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "(?:orElse|nullof)|\\.get\\(\\)",
+            "confidence": 0.35
+          }
+        ]
       }
     },
     {
@@ -2541,7 +2791,13 @@
       ],
       "detection": {
         "mode": "any",
-        "patterns": []
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "(?i)min.*(?:length|len|size)\\s*[:=<>!]+\\s*[456]\\b",
+            "confidence": 0.55
+          }
+        ]
       }
     },
     {
@@ -2568,7 +2824,13 @@
       ],
       "detection": {
         "mode": "any",
-        "patterns": []
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "DELETE\\s+(?:FROM\\s+)?users?",
+            "confidence": 0.45
+          }
+        ]
       }
     },
     {
@@ -2618,7 +2880,13 @@
       ],
       "detection": {
         "mode": "any",
-        "patterns": []
+        "patterns": [
+          {
+            "type": "regex",
+            "value": "(?i)is_deleted\\s*=|deleted_flag|deleted_at\\s*=",
+            "confidence": 0.45
+          }
+        ]
       }
     }
   ]

@@ -325,8 +325,22 @@ class CodeReviewScanner:
         if filepath.name.lower() == "dockerfile":
             pass  # PurePath.match handles it
 
-        rel_path = str(filepath.relative_to(result.scan_path)
-                       if result.scan_path else filepath)
+        rel_path: str
+        sp = result.scan_path  # type: ignore[has-type]
+        if sp:
+            try:
+                rp = str(filepath.relative_to(sp))
+                # When scanning a single file, relative_to returns '.'
+                # Instead use the parent directory as base
+                if rp == '.':
+                    rel_path = filepath.name
+                else:
+                    rel_path = rp
+            except ValueError:
+                # Not under scan_path — use just the filename
+                rel_path = filepath.name
+        else:
+            rel_path = str(filepath)
         result.files_scanned += 1
 
         # Check each rule against this file

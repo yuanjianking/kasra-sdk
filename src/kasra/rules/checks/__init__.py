@@ -346,7 +346,7 @@ def check_path_traversal(content: str) -> list[dict[str, Any]]:
     """Detect path traversal."""
     results: list[dict[str, Any]] = []
     patterns = [
-        (r"(?:open|os\.path\.join)\s*\([^)]*\w+(?:input|user|file|name|path|filename)?\b\s*,", 0.55, "unsafe path"),
+        (r"(?:open|os\.path\.join)\s*\([^)]*\w+(?:input|user|file|name|path|filename)?\b", 0.55, "unsafe path"),
         (r"Path\.Combine\s*\([^)]*\w+(?:input|user|file|name|path|fileName)?\b", 0.6, "Path.Combine"),
         (r"(?:file_get_contents|unlink|fopen)\s*\(\s*\$_(?:GET|POST|REQUEST|COOKIE)", 0.8, "PHP file op"),
         (r"new\s+File\s*\(\s*\w+(?:input|user|file|name|path|fileName)?\b", 0.5, "new File"),

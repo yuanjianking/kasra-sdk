@@ -350,6 +350,7 @@ class RuleEngine:
             RuleNotFoundError: If the rule does not exist.
         """
         self._store.set_enabled(rule_id, enabled=True)
+        self._registry.rebuild()
 
     def disable_rule(self, rule_id: str) -> None:
         """Disable a rule at runtime.
@@ -364,6 +365,7 @@ class RuleEngine:
             RuleNotFoundError: If the rule does not exist.
         """
         self._store.set_enabled(rule_id, enabled=False)
+        self._registry.rebuild()
 
     # ------------------------------------------------------------------
     # Code review (CodeReviewScanner integration)
@@ -515,6 +517,11 @@ class RuleEngine:
 
             rules_path = find_data_dir("rules") / "_code-review-rules.json"
             self._code_review_scanner = CodeReviewScanner(rules_path=rules_path)
+            # Load rules so that enable/disable works before first review_code call
+            try:
+                self._code_review_scanner.load_rules()
+            except FileNotFoundError:
+                pass
         return self._code_review_scanner
 
     def _init_action_registry(self) -> None:
