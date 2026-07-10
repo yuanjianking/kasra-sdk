@@ -442,6 +442,65 @@ class RuleEngine:
         return set(self._get_code_review_scanner().disabled_rule_ids)
 
     # ------------------------------------------------------------------
+    # Custom rule management (runtime add/remove)
+    # ------------------------------------------------------------------
+
+    def add_custom_rule(self, rule: RuleDefinition) -> None:
+        """Add a custom I/O rule at runtime.
+
+        The rule is injected into the in-memory ``RuleStore`` and the
+        registry is rebuilt so pipelines pick it up immediately.
+
+        Args:
+            rule: A fully constructed ``RuleDefinition``.
+        """
+        self._store.add(rule)
+        self._registry.rebuild()
+        self._rule_count = self._store.count()
+
+    def remove_custom_rule(self, rule_id: str) -> bool:
+        """Remove a custom I/O rule at runtime.
+
+        Args:
+            rule_id: The rule ID to remove (e.g. ``"U-01"``).
+
+        Returns:
+            ``True`` if the rule existed and was removed.
+        """
+        if not self._store.exists(rule_id):
+            return False
+        self._store.remove(rule_id)
+        self._registry.rebuild()
+        self._rule_count = self._store.count()
+        return True
+
+    def add_custom_cr_rule(self, rule: dict[str, Any]) -> None:
+        """Add a custom code review rule at runtime.
+
+        The rule is injected into the ``CodeReviewScanner`` so subsequent
+        ``review_code()`` calls pick it up.
+
+        Args:
+            rule: A rule dict following the code review rule schema
+                  (``id``, ``name``, ``severity``, ``action``,
+                   ``target_files``, ``detection.patterns``).
+        """
+        scanner = self._get_code_review_scanner()
+        scanner.add_custom_rule(rule)
+
+    def remove_custom_cr_rule(self, rule_id: str) -> bool:
+        """Remove a custom code review rule at runtime.
+
+        Args:
+            rule_id: The custom rule ID to remove.
+
+        Returns:
+            ``True`` if the rule was found and removed.
+        """
+        scanner = self._get_code_review_scanner()
+        return scanner.remove_custom_rule(rule_id)
+
+    # ------------------------------------------------------------------
     # Direct rule access
     # ------------------------------------------------------------------
 

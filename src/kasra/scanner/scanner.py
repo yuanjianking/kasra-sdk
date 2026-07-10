@@ -177,6 +177,7 @@ class CodeReviewScanner:
             self._rules_path = find_data_dir("rules") / "_code-review-rules.json"
 
         self._rules: list[dict[str, Any]] = []
+        self._custom_rules: list[dict[str, Any]] = []
         self._ignore_patterns: list[str] = []
         self._disabled_rule_ids: set[str] = set()
 
@@ -206,12 +207,27 @@ class CodeReviewScanner:
 
     @property
     def rules(self) -> list[dict[str, Any]]:
+        """Return built-in code review rules only (custom rules excluded).
+
+        Custom rules are stored in ``_custom_rules`` and are included
+        during ``scan()`` via ``_rules + _custom_rules``, but they are
+        **not** exposed through this property to avoid confusion in API
+        listing (custom rules are listed separately from the DB table).
+        """
         return list(self._rules)
 
     @property
     def rule_ids(self) -> list[str]:
-        """Return the list of loaded rule IDs."""
+        """Return the list of built-in rule IDs only."""
         return [r.get("id", "UNKNOWN") for r in self._rules]
+
+    @property
+    def all_rule_ids(self) -> list[str]:
+        """Return the list of all rule IDs (built-in + custom).
+
+        Used during ``scan()`` for enable/disable checks.
+        """
+        return self.rule_ids + [r.get("id", "UNKNOWN") for r in self._custom_rules]
 
     @property
     def disabled_rule_ids(self) -> set[str]:
@@ -227,7 +243,7 @@ class CodeReviewScanner:
         Raises:
             ValueError: If the rule ID is not found.
         """
-        if rule_id not in self.rule_ids:
+        if rule_id not in self.all_rule_ids:
             raise ValueError(f"Code review rule not found: {rule_id}")
         self._disabled_rule_ids.discard(rule_id)
 
@@ -240,9 +256,46 @@ class CodeReviewScanner:
         Raises:
             ValueError: If the rule ID is not found.
         """
-        if rule_id not in self.rule_ids:
+        if rule_id not in self.all_rule_ids:
             raise ValueError(f"Code review rule not found: {rule_id}")
         self._disabled_rule_ids.add(rule_id)
+
+    # ------------------------------------------------------------------
+    # Custom rule management
+    # ------------------------------------------------------------------
+
+    def add_custom_rule(self, rule: dict[str, Any]) -> None:
+        """Add a custom code review rule at runtime.
+
+        The rule dict uses the same structure as built-in rules:
+          ``{ "id": "U-01", "name": "My Rule", "severity": "P1",
+               "action": "warn", "target_files": ["**/*.py"],
+               "detection": { "patterns": [{"type": "regex", "value": "...",
+                                            "confidence": 0.8}] } }``
+
+        Custom rules are included in subsequent ``scan()`` calls.
+        If a rule with the same ID already exists it is overwritten.
+
+        Args:
+            rule: A rule dict following the code review rule schema.
+        """
+        # Remove existing custom rule with same ID, then add
+        rid = rule.get("id", "")
+        self._custom_rules = [r for r in self._custom_rules if r.get("id") != rid]
+        self._custom_rules.append(rule)
+
+    def remove_custom_rule(self, rule_id: str) -> bool:
+        """Remove a custom code review rule at runtime.
+
+        Args:
+            rule_id: The custom rule ID to remove.
+
+        Returns:
+            ``True`` if the rule was found and removed, ``False`` otherwise.
+        """
+        before = len(self._custom_rules)
+        self._custom_rules = [r for r in self._custom_rules if r.get("id") != rule_id]
+        return len(self._custom_rules) < before
 
     def scan(self, path: str | Path) -> CodeReviewResult:
         """Scan a file or directory for code review findings.
@@ -343,8 +396,8 @@ class CodeReviewScanner:
             rel_path = str(filepath)
         result.files_scanned += 1
 
-        # Check each rule against this file
-        for rule in self._rules:
+        # Check each rule against this file (built-in + custom)
+        for rule in self._rules + self._custom_rules:
             rule_id = rule.get("id", "UNKNOWN")
             if rule_id in self._disabled_rule_ids:
                 continue
