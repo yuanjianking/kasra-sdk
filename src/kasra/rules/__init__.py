@@ -1,9 +1,11 @@
-"""Rule loading and storage."""
+"""Rule storage — the engine no longer reads rules from disk.
 
-from kasra.rules.loader import RuleLoader
+Use ``RuleEngine.load_rules_from_list()`` to inject rules.
+``RuleLoader`` was removed in v0.4.
+"""
+
 from kasra.rules.store import RuleStore
 
 __all__ = [
-    "RuleLoader",
     "RuleStore",
 ]

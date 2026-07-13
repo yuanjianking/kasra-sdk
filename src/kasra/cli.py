@@ -117,8 +117,10 @@ def scan(args: argparse.Namespace) -> None:
         config_dir=args.config_dir,
     )
 
+    # load_rules() is deprecated — the engine no longer reads from disk.
+    # Rules must be injected via load_rules_from_list() (from a database).
     count = engine.load_rules()
-    print(f"Loaded {count} rules from {engine.store.count()} series\n")
+    print(f"Note: {count} rules loaded (use Kasra API for full functionality)\n")
 
     try:
         command = args.command

@@ -502,49 +502,8 @@ def check_clipboard(content: str, rel_path: str) -> list[dict[str, Any]]:
     return _pat(content, r"(?i)ClipboardManager|UIPasteboard|Clipboard\.setData", 0.55, "clipboard")
 
 def check_cve(content: str, rel_path: str) -> list[dict[str, Any]]:
-    """Check dependencies against known CVE database."""
-    matches_list: list[dict[str, Any]] = []
-    try:
-        from kasra.utils.package import find_data_dir
-        cve_path = find_data_dir("rules") / "_cve-data.json"
-        if not cve_path.exists():
-            return matches_list
-        with open(cve_path) as f:
-            cve_db = json.load(f)
-    except (OSError, json.JSONDecodeError):
-        return matches_list
-    entries = cve_db.get("entries", [])
-    if not entries:
-        return matches_list
-    bname = PurePosixPath(rel_path).name
-    if bname in ("package.json", "package-lock.json"):
-        try:
-            pkgs = json.loads(content)
-            deps = {**(pkgs.get("dependencies", {}) or {}), **(pkgs.get("devDependencies", {}) or {})}
-            for pkg, ver in deps.items():
-                if not isinstance(ver, str): continue
-                cleaned = ver.lstrip("^~>=<! ")
-                for e in entries:
-                    if e["package"].lower() == pkg.lower() and _is_vulnerable(cleaned, e["vulnerable"]):
-                        pos = content.find(f'"{pkg}"') if f'"{pkg}"' in content else 0
-                        matches_list.append({"start": max(0, pos), "end": 0, "matched": f"{pkg}@{ver}", "confidence": 0.75, "pattern": e["cve"]})
-        except Exception: pass
-    elif bname in ("requirements.txt", "Pipfile"):
-        for line in content.split("\n"):
-            line = line.strip()
-            if not line or line.startswith("#"): continue
-            for e in entries:
-                if e["package"].lower() in line.lower():
-                    m = re.search(r"([\d.]+)", line)
-                    if m and _is_vulnerable(m.group(1), e["vulnerable"]):
-                        pos = content.find(line)
-                        matches_list.append({"start": max(0, pos), "end": pos + len(line), "matched": line[:200], "confidence": 0.75, "pattern": e["cve"]})
-    elif bname in ("pom.xml", "build.gradle"):
-        for e in entries:
-            pkg = e["package"].lower()
-            if pkg in content.lower():
-                for m in re.finditer(r"<version>([\d.]+)</version>", content, re.IGNORECASE):
-                    if _is_vulnerable(m.group(1), e["vulnerable"]):
-                        if not any(a["pattern"] == e["cve"] for a in matches_list):
-                            matches_list.append({"start": m.start(), "end": m.end(), "matched": m.group()[:200], "confidence": 0.75, "pattern": e["cve"]})
-    return matches_list
+    """Check dependencies against known CVE database.
+
+    .. note::
+       CVE data was removed from the package in v0.4. Returns empty list.
+    """

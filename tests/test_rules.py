@@ -1,121 +1,18 @@
-"""Unit tests for rules/loader, rules/store, core/registry, exceptions."""
+"""Unit tests for rules/store, core/registry, exceptions, and rule engine."""
 
 from __future__ import annotations
 
-import json
-import os
 import tempfile
 from pathlib import Path
 
 import pytest
 
-from kasra.rules.loader import RuleLoader
 from kasra.rules.store import RuleStore
 from kasra.core.registry import RuleRegistry
+from kasra.core.engine import RuleEngine
 from kasra.exceptions.errors import RuleLoadError, RuleNotFoundError
 from kasra.models.enums import Severity
 from kasra.models.rule import RuleDefinition
-
-
-# ======================================================================
-# RuleLoader
-# ======================================================================
-
-class TestRuleLoader:
-    SAMPLE_BUNDLE = json.dumps({
-        "bundle": {"series": "I", "name": "Test", "version": "1.0", "total": 2},
-        "rules": [
-            {"id": "I-01", "name": "Rule 1", "description": "First rule",
-             "category": "test", "severity": "P0", "action": "block"},
-            {"id": "I-02", "name": "Rule 2", "description": "Second rule",
-             "category": "test", "severity": "P1", "action": "warn"},
-        ],
-    })
-
-    @pytest.fixture
-    def tmp_dir(self):
-        with tempfile.TemporaryDirectory() as d:
-            yield Path(d)
-
-    def test_load_json_from_string(self):
-        loader = RuleLoader()
-        rules = loader.load_json(self.SAMPLE_BUNDLE)
-        assert len(rules) == 2
-        assert rules[0].id == "I-01"
-        assert rules[1].id == "I-02"
-
-    def test_load_json_invalid(self):
-        loader = RuleLoader()
-        with pytest.raises(RuleLoadError):
-            loader.load_json("not json", source="test")
-
-    def test_load_file(self, tmp_dir):
-        f = tmp_dir / "test-rules.json"
-        f.write_text(self.SAMPLE_BUNDLE)
-        loader = RuleLoader(rules_dir=str(tmp_dir))
-        rules = loader.load_file(str(f))
-        assert len(rules) == 2
-
-    def test_load_file_not_found(self):
-        loader = RuleLoader()
-        with pytest.raises(RuleLoadError):
-            loader.load_file("/nonexistent/path.json")
-
-    def test_load_all(self, tmp_dir):
-        f = tmp_dir / "test-rules.json"
-        f.write_text(self.SAMPLE_BUNDLE)
-        loader = RuleLoader(rules_dir=str(tmp_dir))
-        rules = loader.load_all()
-        assert len(rules) == 2
-
-    def test_load_all_empty_dir(self, tmp_dir):
-        loader = RuleLoader(rules_dir=str(tmp_dir))
-        rules = loader.load_all()
-        assert rules == []
-
-    def test_load_all_skips_hidden(self, tmp_dir):
-        f1 = tmp_dir / "test-rules.json"
-        f1.write_text(self.SAMPLE_BUNDLE)
-        f2 = tmp_dir / "_hidden.json"
-        f2.write_text(self.SAMPLE_BUNDLE)
-        f3 = tmp_dir / ".dotfile.json"
-        f3.write_text(self.SAMPLE_BUNDLE)
-        loader = RuleLoader(rules_dir=str(tmp_dir))
-        rules = loader.load_all()
-        assert len(rules) == 2  # Only test-rules loaded
-
-    def test_load_all_with_errors(self, tmp_dir):
-        f1 = tmp_dir / "good.json"
-        f1.write_text(self.SAMPLE_BUNDLE)
-        f2 = tmp_dir / "bad.json"
-        f2.write_text("not json")
-        loader = RuleLoader(rules_dir=str(tmp_dir))
-        import warnings
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-            rules = loader.load_all()
-            assert len(rules) == 2  # Good file still loads
-            assert len(w) >= 1  # Warning about bad file
-
-    def test_load_file_with_bundle_validation_error(self, tmp_dir):
-        f = tmp_dir / "bad.json"
-        f.write_text(json.dumps({
-            "bundle": {"series": "I"},
-            # Missing rules field
-        }))
-        loader = RuleLoader(rules_dir=str(tmp_dir))
-        with pytest.raises(RuleLoadError):
-            loader.load_file(str(f))
-
-    def test_rules_dir_property(self, tmp_dir):
-        loader = RuleLoader(rules_dir=str(tmp_dir))
-        assert loader.rules_dir == tmp_dir.resolve()
-
-    def test_default_rules_dir_exists(self):
-        """When no rules_dir given, auto-detects from package."""
-        loader = RuleLoader()
-        assert loader.rules_dir is not None
-        assert isinstance(loader.rules_dir, Path)
 
 
 # ======================================================================
@@ -225,9 +122,7 @@ class TestRuleStore:
     def test_count_by_severity(self):
         store = RuleStore()
         store.bulk_replace(self.make_rules(3))
-        # count_by_severity returns dict of severity -> count
         counts = store.count_by_severity()
-        # Should return some counts
         total = sum(counts.values())
         assert total == 3
 
@@ -235,9 +130,7 @@ class TestRuleStore:
         """bulk_replace is atomic — new dict swapped in after full construction."""
         store = RuleStore()
         store.bulk_replace(self.make_rules(3))
-        # Snapshot before mutation
         snapshot = store.all()
-        # During bulk_replace, readers should see consistent state
         store.bulk_replace(self.make_rules(5))
         assert len(snapshot) == 3
 
@@ -294,7 +187,6 @@ class TestRuleRegistry:
         reg = RuleRegistry(store)
         rules = reg.get_rules_for_stage("input")
         assert len(rules) == 2
-        # P0 first, then P1
         assert rules[0].id == "I-01"
         assert rules[1].id == "I-02"
 
@@ -346,7 +238,6 @@ class TestRuleRegistry:
         store = RuleStore()
         store.bulk_replace(self.make_rules())
         reg = RuleRegistry(store)
-        # Add new rule to store directly
         new_rules = self.make_rules() + [
             RuleDefinition(
                 id="O-02", name="D", description="test",
@@ -357,6 +248,100 @@ class TestRuleRegistry:
         store.bulk_replace(new_rules)
         reg.rebuild()
         assert reg.count_by_stage("output") == 2
+
+
+# ======================================================================
+# RuleEngine — load_rules_from_list
+# ======================================================================
+
+class TestRuleEngineLoad:
+    def make_rules(self, n=3):
+        return [
+            RuleDefinition(
+                id=f"I-{i:02d}", name=f"Rule {i}", description="test",
+                category="test", severity=Severity.P1, action="warn",
+                applicable_stages=["input"],
+            )
+            for i in range(1, n + 1)
+        ]
+
+    def test_load_rules_from_list(self):
+        engine = RuleEngine()
+        count = engine.load_rules_from_list(self.make_rules(3))
+        assert count == 3
+        assert engine.rule_count == 3
+        assert engine.is_loaded
+
+    def test_load_rules_from_list_empty(self):
+        engine = RuleEngine()
+        count = engine.load_rules_from_list([])
+        assert count == 0
+        assert engine.is_loaded
+
+    def test_load_rules_multiple_calls(self):
+        engine = RuleEngine()
+        engine.load_rules_from_list(self.make_rules(2))
+        engine.load_rules_from_list(self.make_rules(5))
+        assert engine.rule_count == 5
+
+    def test_rule_count_property(self):
+        engine = RuleEngine()
+        assert engine.rule_count == 0
+        assert not engine.is_loaded
+        engine.load_rules_from_list(self.make_rules(2))
+        assert engine.rule_count == 2
+        assert engine.is_loaded
+
+    def test_store_has_rules_after_load(self):
+        engine = RuleEngine()
+        engine.load_rules_from_list(self.make_rules(2))
+        rules = engine.get_rules()
+        assert len(rules) == 2
+
+    def test_detect_input_with_loaded_rules(self):
+        engine = RuleEngine()
+        rules = [
+            RuleDefinition(
+                id="I-01", name="Password Check", description="test",
+                category="credential_leak", severity=Severity.P0, action="block",
+                applicable_stages=["input"],
+                detection=__import__("kasra.models.rule", fromlist=["DetectionConfig"]).DetectionConfig(
+                    mode="any",
+                    patterns=[
+                        __import__("kasra.models.rule", fromlist=["PatternDefinition"]).PatternDefinition(
+                            type="regex", value=r"password\s*[:=]\s*\w+", confidence=0.9,
+                        )
+                    ],
+                ),
+            )
+        ]
+        engine.load_rules_from_list(rules)
+        result = engine.detect_input("my password=admin123")
+        assert result.blocked
+
+    def test_detect_input_no_match(self):
+        engine = RuleEngine()
+        engine.load_rules_from_list(self.make_rules())
+        result = engine.detect_input("safe content")
+        assert not result.blocked
+
+    def test_get_rules_stage_filter(self):
+        engine = RuleEngine()
+        all_rules = [
+            RuleDefinition(
+                id="I-01", name="A", description="test",
+                category="test", severity=Severity.P1, action="warn",
+                applicable_stages=["input"],
+            ),
+            RuleDefinition(
+                id="O-01", name="B", description="test",
+                category="test", severity=Severity.P2, action="warn",
+                applicable_stages=["output"],
+            ),
+        ]
+        engine.load_rules_from_list(all_rules)
+        input_rules = engine.get_rules_for_stage("input")
+        assert len(input_rules) == 1
 
 
 # ======================================================================

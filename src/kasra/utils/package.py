@@ -17,7 +17,6 @@ _DATA_DIR_PREFIX = "_"  # we ship config/ → kasra/_config/ in the wheel
 _DATA_DIRS: dict[str, list[str]] = {
     # Order: installed-package subdir (via force-include) first,
     # then dev-tree sibling (relative to __file__).
-    "rules": ["_rules"],
     "config": ["_config"],
 }
 
@@ -39,8 +38,8 @@ def _package_root() -> Path | None:
         return None
 
 
-def find_data_dir(name: Literal["rules", "config"]) -> Path:
-    """Locate a Kasra data directory (*name* is ``"rules"`` or ``"config"``).
+def find_data_dir(name: Literal["config"]) -> Path:
+    """Locate a Kasra data directory (*name* is ``"config"``).
 
     Resolution order:
       1. Environment variable ``KASRA_{name.upper()}_DIR``.
@@ -50,6 +49,10 @@ def find_data_dir(name: Literal["rules", "config"]) -> Path:
 
     Returns the first match; if none exist, returns the dev-tree path
     (the caller will raise a clear error).
+
+    .. note::
+       The ``"rules"`` data directory was removed in v0.4 — the engine
+       no longer reads rules from disk. Rules are loaded from the database.
     """
     name_upper = name.upper()
 

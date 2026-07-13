@@ -5,19 +5,26 @@ The :class:`RuleEngine` is the single entry point for all SDK consumers::
     from kasra import RuleEngine
 
     engine = RuleEngine()
-    engine.load_rules()
+    engine.load_rules_from_list(my_rules)
 
     result = engine.detect_input("my password is secret123")
     if result.blocked:
         print("Content was blocked")
     elif result.warnings:
         print("Warnings:", result.warnings)
+
+.. note::
+   Starting in v0.4, rules must be injected via ``load_rules_from_list()``.
+   The old disk-based ``load_rules()`` is deprecated and will be removed.
 """
 
 from __future__ import annotations
 
+import json
+import logging
 import os
 import threading
+import warnings
 from pathlib import Path
 from typing import Any
 
@@ -35,13 +42,14 @@ from kasra.models.context import FileContext, RequestContext
 from kasra.models.enums import Stage
 from kasra.models.result import AggregatedResult, DetectionResult
 from kasra.models.rule import RuleDefinition
-from kasra.rules.loader import RuleLoader
 from kasra.rules.store import RuleStore
 from kasra.pipeline.input_pipeline import InputDetectionPipeline
 from kasra.pipeline.output_pipeline import OutputDetectionPipeline
 from kasra.pipeline.behavior_pipeline import BehaviorDetectionPipeline
 from kasra.scanner import CodeReviewScanner
 from kasra.scanner.models import CodeReviewResult
+
+logger = logging.getLogger("kasra.engine")
 
 
 class RuleEngine:
@@ -68,10 +76,16 @@ class RuleEngine:
         rules_dir: str | os.PathLike | None = None,
         config_dir: str | os.PathLike | None = None,
     ) -> None:
+        """Initialise the RuleEngine.
+
+        .. deprecated:: 0.4
+           The *rules_dir* parameter is deprecated. Rules are now loaded
+           via ``load_rules_from_list()`` — the engine no longer reads
+           from disk.
+        """
         self._config = config or ConfigLoader(config_dir).load()
 
         # Core components
-        self._loader = RuleLoader(rules_dir)
         self._store = RuleStore()
         self._registry = RuleRegistry(self._store)
         self._runner = RuleRunner()
@@ -199,46 +213,69 @@ class RuleEngine:
     # Rule loading
     # ------------------------------------------------------------------
 
-    def load_rules(self, path: str | os.PathLike | None = None) -> int:
-        """Load rule definitions from JSON bundle file(s).
+    def load_rules_from_list(self, rules: list[RuleDefinition]) -> int:
+        """Load rule definitions from an external list.
+
+        Unlike ``load_rules()`` which reads from disk, this method
+        accepts a pre-built list of ``RuleDefinition`` objects —
+        making the engine a pure executor that doesn't need filesystem
+        access.
+
+        The caller is responsible for aggregating rules from all sources
+        (SDK bundles, custom rules, etc.) before calling this method.
 
         Args:
-            path: Optional path to a specific JSON rule file.
-                  If ``None``, loads all rules from the configured rules directory.
+            rules: A list of fully constructed ``RuleDefinition`` objects.
 
         Returns:
             The number of rules loaded.
 
-        Raises:
-            RuleLoadError: If a rule file cannot be read or validated.
-        """
-        if path is not None:
-            rules = self._loader.load_file(path)
-        else:
-            rules = self._loader.load_all()
+        Usage::
 
+            from kasra import RuleEngine
+            from kasra.models.rule import RuleDefinition
+
+            engine = RuleEngine()
+            engine.load_rules_from_list(my_rules)
+
+            result = engine.detect_input("test")
+        """
         self._store.bulk_replace(rules)
         self._registry.rebuild()
         self._loaded = True
         self._rule_count = self._store.count()
-
-        # Validate all rules (warnings only)
-        for rule in rules:
-            patterns = rule.detection.patterns
-            if not patterns and not rule.config.no_pattern_match:
-                # Rules with no patterns and no config-only flag — likely misconfigured
-                logger = __import__("logging").getLogger("kasra.engine")
-                logger.debug("Rule %s has no detection patterns", rule.id)
-
         return self._rule_count
 
-    def reload_rules(self) -> int:
-        """Reload all rules from the configured rules directory.
+    def load_rules(self, path: str | os.PathLike | None = None) -> int:
+        """Load rule definitions from JSON bundle file(s) on disk.
 
-        Useful for hot-reload in development.
+        .. deprecated:: 0.4
+           Use ``load_rules_from_list()`` instead.
+
+        Returns:
+            Number of rules loaded (always 0 — the engine no longer reads
+            from disk).
         """
-        self._loaded = False
-        return self.load_rules()
+        warnings.warn(
+            "load_rules() is deprecated. Use load_rules_from_list() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        logger.warning("load_rules() called but engine no longer reads from disk — ignored.")
+        return 0
+
+    def reload_rules(self) -> int:
+        """Reload all rules from disk (no-op).
+
+        .. deprecated:: 0.4
+           Use ``load_rules_from_list()`` instead.
+        """
+        warnings.warn(
+            "reload_rules() is deprecated. Use load_rules_from_list() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return 0
 
     # ------------------------------------------------------------------
     # Detection pipelines
@@ -378,7 +415,8 @@ class RuleEngine:
         """Run a code review security scan on a file or directory.
 
         Delegates to :class:`CodeReviewScanner` under the hood, loading
-        rules from ``_code-review-rules.json`` on first call.
+        rules that were injected via the scanner's ``set_rules()`` method.
+        Rules are provided by the application layer (from the database).
 
         Args:
             path: Path to a file or directory to scan.
@@ -396,14 +434,9 @@ class RuleEngine:
 
         Returns:
             A list of rule dicts (empty if ``review_code()`` has not
-            been called yet).
+            been called yet or no rules were injected).
         """
         scanner = self._get_code_review_scanner()
-        if not scanner.rules:
-            try:
-                scanner.load_rules()
-            except FileNotFoundError:
-                pass
         return scanner.rules
 
     def get_code_review_rule_ids(self) -> list[str]:
@@ -572,15 +605,7 @@ class RuleEngine:
 
     def _get_code_review_scanner(self) -> CodeReviewScanner:
         if self._code_review_scanner is None:
-            from kasra.utils.package import find_data_dir
-
-            rules_path = find_data_dir("rules") / "_code-review-rules.json"
-            self._code_review_scanner = CodeReviewScanner(rules_path=rules_path)
-            # Load rules so that enable/disable works before first review_code call
-            try:
-                self._code_review_scanner.load_rules()
-            except FileNotFoundError:
-                pass
+            self._code_review_scanner = CodeReviewScanner()
         return self._code_review_scanner
 
     def _init_action_registry(self) -> None:

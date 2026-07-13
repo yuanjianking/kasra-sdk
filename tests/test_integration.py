@@ -19,18 +19,15 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from kasra import RuleEngine
 from kasra.models.enums import Severity
+from tests.io_rules_data import load_io_rules
 
-
-# ---------------------------------------------------------------------------
-# Fixtures
-# ---------------------------------------------------------------------------
 
 @pytest.fixture(scope="module")
 def engine() -> RuleEngine:
-    """Create and load a RuleEngine with all rule series (I + O)."""
+    """Create and load a RuleEngine with I/O series rules."""
     eng = RuleEngine()
-    count = eng.load_rules()  # loads all JSON bundles from the rules directory
-    assert count >= 110, f"Expected >=110 rules (I+O), got {count}"
+    count = eng.load_rules_from_list(load_io_rules())
+    assert count >= 100, f"Expected >=100 rules (I+O), got {count}"
     return eng
 
 

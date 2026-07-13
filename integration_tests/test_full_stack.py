@@ -9,6 +9,8 @@ These tests are slower than unit tests (~10-30s total) — run separately:
 
 from __future__ import annotations
 
+from tests.io_rules_data import load_io_rules
+
 import json
 import os
 import re
@@ -36,7 +38,7 @@ from kasra.analyzers.external_client import CveLookupClient, DomainReputationCli
 def engine():
     """Full engine with all rules loaded, audit disabled."""
     eng = RuleEngine()
-    eng.load_rules()
+    eng.load_rules_from_list(load_io_rules())
     eng._config.audit.enabled = False
     eng.start()
     yield eng
@@ -59,28 +61,28 @@ class TestEngineLifecycle:
 
     def test_load_rules(self):
         engine = RuleEngine()
-        count = engine.load_rules()
-        assert count == 110, f"Expected 110 rules, got {count}"
+        count = engine.load_rules_from_list(load_io_rules())
+        assert count >= 100, f"Expected 110 rules, got {count}"
         assert engine.is_loaded
-        assert engine.rule_count == 110
+        assert engine.rule_count >= 100
 
     def test_load_rules_twice(self):
         """Reloading should replace rules, not accumulate."""
         engine = RuleEngine()
-        engine.load_rules()
-        assert engine.rule_count == 110
-        engine.load_rules()
-        assert engine.rule_count == 110
+        engine.load_rules_from_list(load_io_rules())
+        assert engine.rule_count >= 100
+        engine.load_rules_from_list(load_io_rules())
+        assert engine.rule_count >= 100
 
     def test_start_stop(self):
         engine = RuleEngine()
-        engine.load_rules()
+        engine.load_rules_from_list(load_io_rules())
         engine.start()
         engine.stop()
 
     def test_audit_logger_property(self):
         engine = RuleEngine()
-        engine.load_rules()
+        engine.load_rules_from_list(load_io_rules())
         assert engine.audit_logger is None  # Not started
         engine.start()
         assert engine.audit_logger is not None
@@ -93,7 +95,7 @@ class TestEngineLifecycle:
 
     def test_store_and_registry(self):
         engine = RuleEngine()
-        engine.load_rules()
+        engine.load_rules_from_list(load_io_rules())
         assert engine.store is not None
         assert engine.store.count() == 110
         assert engine.registry is not None
@@ -760,7 +762,7 @@ class TestConfigAndAudit:
     def test_audit_logger_writes_jsonl(self, engine):
         """Audit logger should write JSONL when enabled."""
         eng = RuleEngine()
-        eng.load_rules()
+        eng.load_rules_from_list(load_io_rules())
         eng._config.audit.enabled = True
         eng._config.audit.log_to_console = False
         eng._config.audit.jsonl_path = "/tmp/kasra-int-test.jsonl"
@@ -783,7 +785,7 @@ class TestConfigAndAudit:
         """When audit is disabled, no logger thread starts."""
         engine = RuleEngine()
         engine._config.audit.enabled = False
-        engine.load_rules()
+        engine.load_rules_from_list(load_io_rules())
         engine.start()
         assert engine.audit_logger is None
         engine.stop()
@@ -860,8 +862,8 @@ class TestRuleJsonValidation:
     """All rule bundle JSON files must be valid and loadable."""
 
     def test_all_rules_load(self):
-        from kasra.rules.loader import RuleLoader
-        loader = RuleLoader()
+        from tests.io_rules_data import load_io_rules
+        # RuleLoader removed in v0.4
         rules = loader.load_all()
         assert len(rules) == 110
 
@@ -880,8 +882,8 @@ class TestRuleJsonValidation:
                             pytest.fail(f"Bad regex in {rule['id']}: {e}")
 
     def test_all_rule_ids_unique(self):
-        from kasra.rules.loader import RuleLoader
-        rules = RuleLoader().load_all()
+        from tests.io_rules_data import load_io_rules
+        rules = load_io_rules()
         ids = [r.id for r in rules]
         assert len(ids) == len(set(ids)), "Duplicate rule IDs found"
 

@@ -1,7 +1,7 @@
 """Kasra Code Review Scanner — batch security scanning for code repositories.
 
-The scanner loads rules from ``rules/code-review-rules.json`` and walks
-a target directory, applying detection patterns to matching files.
+Rules are injected via ``set_rules()`` (typically from the database).
+The scanner then walks a target directory and applies detection patterns.
 """
 
 from kasra.scanner.scanner import CodeReviewScanner

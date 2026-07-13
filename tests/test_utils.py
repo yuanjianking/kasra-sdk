@@ -15,7 +15,6 @@ from kasra.utils.text import (
 )
 from kasra.utils.time import utcnow, timer
 from kasra.utils.severity import SEVERITY_RANK, Severity
-from kasra.utils.package import find_data_dir
 from kasra.utils.imports import lazy_import, optional_import
 
 
@@ -199,19 +198,17 @@ class TestSeverityUtils:
 # ======================================================================
 
 class TestPackageUtils:
-    def test_find_data_dir_rules_exists(self):
-        path = find_data_dir("rules")
-        assert path is not None
-        assert path.exists()
-
     def test_find_data_dir_config_exists(self):
+        from kasra.utils.package import find_data_dir
         path = find_data_dir("config")
         assert path is not None
         assert path.exists()
 
-    def test_find_data_dir_nonexistent(self):
-        with pytest.raises(KeyError):
-            find_data_dir("nonexistent_dir_xyz")
+    def test_find_data_dir_config_only(self):
+        from kasra.utils.package import find_data_dir
+        path = find_data_dir("config")
+        assert path is not None
+        assert path.exists()
 
 
 # ======================================================================

@@ -163,18 +163,12 @@ def _try_semgrep(content: str, rel_path: str, rule_id: str,
 class CodeReviewScanner:
     """Scans code repositories for security vulnerabilities.
 
-    Loads rules from a JSON file (e.g., ``rules/code-review-rules.json``),
-    walks a target directory, and applies detection patterns to matching files.
+    Rules are injected via ``set_rules()`` (typically from the database).
+    Walks a target directory and applies detection patterns to matching files.
     """
 
     def __init__(self, rules_path: str | Path | None = None) -> None:
-        self._rules_path: Path | None
-        if rules_path is not None:
-            self._rules_path = Path(rules_path)
-        else:
-            # Default: auto-detect from package data
-            from kasra.utils.package import find_data_dir
-            self._rules_path = find_data_dir("rules") / "_code-review-rules.json"
+        self._rules_path: Path | None = Path(rules_path) if rules_path else None
 
         self._rules: list[dict[str, Any]] = []
         self._custom_rules: list[dict[str, Any]] = []
@@ -186,7 +180,11 @@ class CodeReviewScanner:
     # ------------------------------------------------------------------
 
     def load_rules(self) -> int:
-        """Load code review rules from the JSON file.
+        """Load code review rules from the JSON file (DEPRECATED).
+
+        .. deprecated:: 0.4
+           Use ``set_rules()`` to inject rules from an external source
+           (e.g. database) instead of reading from disk.
 
         Returns:
             Number of rules loaded.
@@ -228,6 +226,17 @@ class CodeReviewScanner:
         Used during ``scan()`` for enable/disable checks.
         """
         return self.rule_ids + [r.get("id", "UNKNOWN") for r in self._custom_rules]
+
+    def set_rules(self, rules: list[dict[str, Any]]) -> None:
+        """Replace all built-in code review rules from an external list.
+
+        Use this instead of ``load_rules()`` when rules come from a
+        database rather than a JSON file on disk.
+
+        Args:
+            rules: A list of code review rule dicts.
+        """
+        self._rules = list(rules)
 
     @property
     def disabled_rule_ids(self) -> set[str]:

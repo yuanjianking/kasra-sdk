@@ -61,7 +61,6 @@ packages = ["src/kasra"]
 
 [tool.hatch.build.targets.wheel.force-include]
 "config" = "kasra/_config"
-"rules" = "kasra/_rules"
 
 [tool.hatch.build.targets.sdist]
 include = ["src/kasra/**"]

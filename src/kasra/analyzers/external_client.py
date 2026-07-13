@@ -91,19 +91,14 @@ class CveLookupClient:
         try:
             if self._data_path:
                 path = Path(self._data_path)
+                if path.exists():
+                    raw = path.read_bytes()
+                    data = json.loads(raw)
+                    self._entries = data.get("entries", [])
+                else:
+                    self._entries = []
             else:
-                from kasra.utils.package import find_data_dir
-                rules_dir = find_data_dir("rules")
-                path = rules_dir / "_cve-data.json"
-                if not path.exists():
-                    # Fallback to package root
-                    path = Path(__file__).resolve().parent.parent.parent.parent / "rules" / "_cve-data.json"
-
-            if path.exists():
-                raw = path.read_bytes()
-                data = json.loads(raw)
-                self._entries = data.get("entries", [])
-            else:
+                # CVE data file removed in v0.4 — feature disabled
                 self._entries = []
         except Exception:
             self._entries = []

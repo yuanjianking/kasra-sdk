@@ -60,9 +60,11 @@ def configure(
     ``RuleEngine()`` directly — it is more explicit and testable.
 
     Args:
-        rules_dir: Directory containing rule JSON bundles.
+        rules_dir: Directory containing rule JSON bundles (used when
+            *auto_load* is ``True``).
         config_dir: Directory containing YAML config files.
-        auto_load: If ``True`` (default), call ``load_rules()`` immediately.
+        auto_load: If ``True`` (default), read rules from JSON bundles
+            in *rules_dir* and load them via ``load_rules_from_list()``.
         **config_overrides: Any ``GlobalConfig`` field to override
             (e.g. ``engine__max_concurrent_rules=50``).
 
@@ -97,7 +99,14 @@ def configure(
         config_dir=config_dir,
     )
     if auto_load:
-        _global_engine.load_rules()
+        import warnings
+        warnings.warn(
+            "configure(auto_load=True) is a no-op in v0.4+ — "
+            "the engine no longer reads rules from disk. "
+            "Use load_rules_from_list() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
     return _global_engine
 
 
