@@ -110,6 +110,25 @@ def configure(
     return _global_engine
 
 
+def configure_rules(rules: list) -> RuleEngine:
+    """Create and configure a global RuleEngine from a list of RuleDefinition objects.
+
+    Unlike ``configure()`` which reads from disk, this method accepts
+    pre-built RuleDefinition objects — making it the preferred way to
+    set up a RuleEngine in v0.4+.
+
+    Args:
+        rules: A list of ``RuleDefinition`` objects.
+
+    Returns:
+        The configured ``RuleEngine`` instance (also stored globally).
+    """
+    global _global_engine
+    _global_engine = RuleEngine()
+    _global_engine.load_rules_from_list(rules)
+    return _global_engine
+
+
 def get_engine() -> RuleEngine:
     """Return the global engine created by :func:`configure`.
 
