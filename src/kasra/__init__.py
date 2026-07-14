@@ -35,8 +35,33 @@ __all__ = [
     "RuleEngine",
     "ConfigLoader",
     "GlobalConfig",
-    "configure",
+    "configure_rules",
 ]
+
+
+# ---------------------------------------------------------------------------
+# Convenience: one-shot configure() for simple use-cases
+# ---------------------------------------------------------------------------
+
+_global_engine: RuleEngine | None = None
+
+
+def configure_rules(rules: list) -> RuleEngine:
+    """Create and configure a global RuleEngine from a list of RuleDefinition objects.
+
+    This is the preferred way to set up a RuleEngine in v0.4+ — the engine
+    no longer reads rules from disk.
+
+    Args:
+        rules: A list of ``RuleDefinition`` objects.
+
+    Returns:
+        The configured ``RuleEngine`` instance (also stored globally).
+    """
+    global _global_engine
+    _global_engine = RuleEngine()
+    _global_engine.load_rules_from_list(rules)
+    return _global_engine
 
 
 # ---------------------------------------------------------------------------

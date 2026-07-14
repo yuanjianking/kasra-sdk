@@ -55,14 +55,6 @@ def _load_ignore_patterns(scan_root: Path) -> list[str]:
         return []
 
 
-_is_vulnerable_impl = None
-def _is_vulnerable(installed: str, vulnerable_range: str) -> bool:
-    """Compare semver strings for CVE checking."""
-    global _is_vulnerable_impl
-    if _is_vulnerable_impl is None:
-        from kasra.scanner.checkers import _is_vulnerable as _impl
-        _is_vulnerable_impl = _impl
-    return _is_vulnerable_impl(installed, vulnerable_range)
 
 
 def _matches_glob(file_path: str, patterns: list[str]) -> bool:
@@ -464,7 +456,6 @@ class CodeReviewScanner:
             # ── Auth / access control ──
             "SEC-18": ("_check_auth_missing", ["py", "js", "ts", "java", "go", "cs", "php", "rb"], 0.35, "Authentication missing on API route"),
             "SEC-22": ("_check_idor", ["py", "js", "ts", "java", "go", "cs", "php", "rb"], 0.35, "IDOR via route param to DB query"),
-            "SEC-40": ("_check_cve", ["json", "txt", "xml"], 0.5, "Known CVE dependencies"),
             "SEC-39": ("_check_dep_confusion", ["json", "txt"], 0.3, "Dependency confusion risk"),
 
             # ── Data protection ──
@@ -1287,10 +1278,6 @@ class CodeReviewScanner:
         return matches
 
     @staticmethod
-    def _check_cve(content: str, rel_path: str) -> list[dict[str, Any]]:
-        """Check dependencies against known CVE database."""
-        from kasra.scanner.checkers import check_cve
-        return check_cve(content, rel_path)
 
     @staticmethod
     def _check_integer_overflow(content: str, rel_path: str) -> list[dict[str, Any]]:
