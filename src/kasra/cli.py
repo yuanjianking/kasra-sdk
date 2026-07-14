@@ -172,12 +172,12 @@ def _list_rules(engine: RuleEngine) -> None:
 def _show_info(engine: RuleEngine) -> None:
     cfg = engine.config
     print(f"Kasra Rule Engine v{engine.store.count()} rules loaded")
-    print(f"  Rules directory:   {engine._loader.rules_dir}")
+    print(f"  Rules:             {engine.rule_count} loaded")
     print(f"  Engine config:     {cfg.engine}")
     print(f"  Input pipeline:    {'enabled' if cfg.pipeline.input.enabled else 'disabled'}")
     print(f"  Output pipeline:   {'enabled' if cfg.pipeline.output.enabled else 'disabled'}")
     print(f"  Behavior pipeline: {'enabled' if cfg.pipeline.behavior.enabled else 'disabled'}")
-    print(f"  CodeReviewScanner: available via `kasra-scan review`")
+    print(f"  CodeReviewScanner: available via API")
 
     sev_counts = engine.store.count_by_severity()
     for sev in Severity:
@@ -255,19 +255,19 @@ def _run_code_review(args: argparse.Namespace) -> None:
         rules_dir=args.rules_dir,
         config_dir=args.config_dir,
     )
-    try:
-        count = engine.load_rules()
-        print(f"Loaded {count} input/output rules")
+    count = engine.load_rules()
+    if count:
+        print(f"Engine initialized")
 
-        scan_path = Path(args.path)
-        if not scan_path.exists():
-            print(f"Error: path not found: {scan_path}")
-            sys.exit(1)
+    scan_path = Path(args.path)
+    if not scan_path.exists():
+        print(f"Error: path not found: {scan_path}")
+        sys.exit(1)
 
-        result = engine.review_code(scan_path)
+    result = engine.review_code(scan_path)
 
     # Filter by severity if requested
-    findings = result.findings
+    findings = list(result.findings)
     if args.severity:
         sev_order = {"P0": 0, "P1": 1, "P2": 2}
         min_sev = sev_order.get(args.severity, 0)

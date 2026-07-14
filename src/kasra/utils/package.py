@@ -1,8 +1,11 @@
 """Kasra L3 Rule Engine — Package data / resource resolution.
 
-Provides a single reliable way to locate data directories
-(``rules``, ``config``) whether the package is running from
-source or installed via ``pip``.
+Provides a single reliable way to locate the config data directory
+whether the package is running from source or installed via ``pip``.
+
+.. note::
+   The ``rules`` data directory was removed in v0.4 — rules are now
+   read from the database, not from disk.
 """
 
 from __future__ import annotations

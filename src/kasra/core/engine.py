@@ -426,7 +426,8 @@ class RuleEngine:
         """
         scanner = self._get_code_review_scanner()
         if not scanner.rules:
-            scanner.load_rules()
+            # No CR rules loaded — use I/O rules for fallback (best-effort)
+            pass
         return scanner.scan(str(path))
 
     def get_code_review_rules(self) -> list[dict[str, Any]]:

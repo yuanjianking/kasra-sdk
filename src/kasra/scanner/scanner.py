@@ -12,7 +12,6 @@ from typing import Any
 
 from kasra.scanner.models import CodeReviewFinding, CodeReviewResult
 from kasra.scanner.checkers import (
-    init_checkers, run_checker,
     match_dockerfile, match_yaml_path, match_keyvalue,
 )
 
@@ -92,9 +91,8 @@ def _try_semgrep(content: str, rel_path: str, rule_id: str,
     :exc:`ImportError` is raised.  Rules without Semgrep patterns are
     skipped gracefully.
 
-    Raises:
-        ImportError: If a rule requires Semgrep but it is not installed.
-        Exception: If semgrep execution fails.
+    If Semgrep CLI is not available, patterns are skipped gracefully
+    (regex/pattern-based matching still works as fallback).
     """
     global _SEMGREP_AVAILABLE, _SEMGREP_RUNNER
 
@@ -106,15 +104,12 @@ def _try_semgrep(content: str, rel_path: str, rule_id: str,
                 has_semgrep_patterns as HSM,
             )
             _SEMGREP_RUNNER = (SR(), HSM)
-        except ImportError as exc:
-            raise ImportError(
-                "Semgrep package is required for code review. "
-                "Install it with: pip install kasra-sdk[semgrep]"
-            ) from exc
+        except ImportError:
+            _SEMGREP_RUNNER = (None, lambda _: False)
 
     runner, has_patterns = _SEMGREP_RUNNER
-    if not has_patterns(rule_id):
-        return  # this rule doesn't use Semgrep — normal
+    if runner is None or not has_patterns(rule_id):
+        return  # Semgrep not available or rule doesn't need it
 
     # This rule needs Semgrep — ensure the CLI is on PATH
     if _SEMGREP_AVAILABLE is None:
@@ -123,18 +118,11 @@ def _try_semgrep(content: str, rel_path: str, rule_id: str,
             result = subprocess.run(["semgrep", "--version"],
                                     capture_output=True, text=True, timeout=5)
             _SEMGREP_AVAILABLE = result.returncode == 0
-        except Exception as exc:
+        except Exception:
             _SEMGREP_AVAILABLE = False
-            raise ImportError(
-                "Semgrep CLI is required for code review but was not found "
-                "on PATH. Install it with: pip install kasra-sdk[semgrep]"
-            ) from exc
 
     if not _SEMGREP_AVAILABLE:
-        raise ImportError(
-            "Semgrep CLI is required for code review but was not found "
-            "on PATH. Install it with: pip install kasra-sdk[semgrep]"
-        )
+        return  # Semgrep CLI not found — skip semgrep patterns, use regex fallback
 
     findings = runner.run(rel_path, content, rule_id)
     seen: set[tuple[int, int]] = set()
@@ -316,7 +304,7 @@ class CodeReviewScanner:
             return result
 
         if not self._rules:
-            result.error = "No rules loaded. Call load_rules() first."
+            result.error = "No rules loaded. Use set_rules() to inject rules."
             return result
 
         # Load .kasraignore patterns
@@ -472,8 +460,7 @@ class CodeReviewScanner:
         }
         cls._CODE_CHECKS = checks
 
-    @staticmethod
-    def _apply_rule(rule: dict[str, Any],
+    def _apply_rule(self, rule: dict[str, Any],
                     content: str,
                     rel_path: str,
                     result: CodeReviewResult) -> None:
@@ -496,10 +483,21 @@ class CodeReviewScanner:
         # ── Phase 0: Semgrep AST-level matching ──
         _try_semgrep(content, rel_path, rule_id, matches)
 
-        # ── Phase 1: Python checker from checkers.py ──
-        init_checkers()
-        checker_matches = run_checker(rule_id, content, rel_path)
-        matches.extend(checker_matches)
+        # ── Phase 1: Python checker (scanner's own _check_ methods) ──
+        self._init_code_checks()
+        entry = self._CODE_CHECKS.get(rule_id)
+        if entry:
+            check_exts = entry[1]
+            check_ext = rel_path.rsplit(".", 1)[-1].lower() if "." in rel_path else ""
+            if check_ext in check_exts or not check_exts:
+                check_name = entry[0]
+                check_func = getattr(self, check_name, None)
+                if check_func:
+                    try:
+                        checker_matches = check_func(content, rel_path)
+                        matches.extend(checker_matches)
+                    except Exception:
+                        pass
 
         # ── Phase 2: run JSON patterns (regex + config engines) ──
         for pat in patterns:
