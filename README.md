@@ -287,7 +287,3 @@ pytest tests/                    # Unit tests
 ```
 
 ---
-
-## License
-
-Proprietary — Internal Use Only.
