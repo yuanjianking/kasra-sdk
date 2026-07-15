@@ -53,9 +53,6 @@ dev = [
 Homepage = "https://github.com/your-org/kasra-sdk"
 Documentation = "https://github.com/your-org/kasra-sdk/docs/API.md"
 
-[project.scripts]
-kasra-scan = "kasra.cli:main"
-
 [tool.hatch.build.targets.wheel]
 packages = ["src/kasra"]
 

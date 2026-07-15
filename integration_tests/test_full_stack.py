@@ -793,67 +793,8 @@ class TestConfigAndAudit:
 
 
 # ======================================================================
-# 12. CLI Integration
+# 12. (CLI removed in v0.4)
 # ======================================================================
-
-class TestCLIIntegration:
-    """CLI commands via kasra-scan."""
-
-    def test_info_command_output(self, engine):
-        """Simulate 'kasra-scan info' via CLI module."""
-        from kasra.cli import _show_info
-        from argparse import Namespace
-        import io
-        import sys
-
-        captured = io.StringIO()
-        sys.stdout = captured
-        try:
-            _show_info(engine)
-            output = captured.getvalue()
-        finally:
-            sys.stdout = sys.__stdout__
-
-        assert "110" in output
-        assert "Rules" in output or "rules" in output
-
-    def test_health_check_reports_healthy(self, engine):
-        """Health check should report healthy status."""
-        from kasra.cli import _health_check
-        import io
-        import sys
-
-        captured = io.StringIO()
-        sys.stdout = captured
-        try:
-            with pytest.raises(SystemExit) as exc_info:
-                _health_check(engine)
-            assert exc_info.value.code == 0
-        finally:
-            sys.stdout = sys.__stdout__
-
-        output = captured.getvalue()
-        assert "healthy" in output
-
-    def test_list_rules(self, engine):
-        """List rules should output all rules."""
-        from kasra.cli import _list_rules
-        import io
-        import sys
-
-        captured = io.StringIO()
-        sys.stdout = captured
-        try:
-            _list_rules(engine)
-        finally:
-            sys.stdout = sys.__stdout__
-
-        output = captured.getvalue()
-        assert "I-01" in output
-        assert "O-01" in output
-        lines = output.strip().split("\n")
-        assert len(lines) >= 100
-
 
 # ======================================================================
 # 13. Rule JSON Validation

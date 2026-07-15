@@ -6,7 +6,7 @@
 from kasra import RuleEngine
 
 engine = RuleEngine()
-engine.load_rules()
+engine.load_rules_from_list(my_rules)
 
 # Input detection
 result = engine.detect_input("my password is secret123")
@@ -41,11 +41,26 @@ pip install kasra-sdk
 
 ```python
 from kasra import RuleEngine
+from kasra.models.rule import RuleDefinition, DetectionConfig, PatternDefinition
+from kasra.models.enums import Severity, ActionType, MatchMode, PatternType
+
+# Build or load your rules (from DB, API, etc.)
+rules = [
+    RuleDefinition(
+        id="I-01", name="Password Check", description="Detect passwords",
+        category="credential_leak", severity=Severity.P0, action=ActionType.BLOCK,
+        applicable_stages=["input"],
+        detection=DetectionConfig(
+            mode=MatchMode.ANY,
+            patterns=[PatternDefinition(type=PatternType.REGEX, value=r"password\s*[:=]\s*\w+", confidence=0.9)],
+        ),
+    )
+]
 
 engine = RuleEngine()
-engine.load_rules()
+engine.load_rules_from_list(rules)
 
-result = engine.detect_input("my password is secret123")
+result = engine.detect_input("my password is admin123")
 if result.blocked:
     print("❌ Blocked")
 elif result.warnings:
@@ -64,34 +79,15 @@ for dr in result.triggered_rules:
         print(f"    [{ev.source_layer}] {ev.reason}")
 ```
 
-### Code review (Python API)
+### Code review
 
 ```python
-from kasra import RuleEngine
-
-engine = RuleEngine()
-engine.load_rules()
-
-# Single file or directory
 result = engine.review_code("./src")
 for f in result.findings:
     print(f"  [{f.rule_id}] {f.file_path}:{f.line_number}")
 
 # Or scan a single file
 result = engine.review_code("config.py")
-```
-
-### Code review (CLI)
-
-```bash
-# Scan a code repository
-kasra-scan review ./src
-
-# Only P0 findings
-kasra-scan review ./src --severity P0
-
-# JSON output (for CI integration)
-kasra-scan review ./src --json
 ```
 
 ### Behavior tracking
@@ -128,6 +124,7 @@ if result.blocked:
 
 | Method | Purpose |
 |--------|---------|
+| `load_rules_from_list(rules)` | Inject rules from a list of `RuleDefinition` objects **(preferred in v0.4+)** |
 | `get_rules()` | All input/output rules as `RuleDefinition` objects |
 | `get_rules_for_stage(stage)` | Input/output rules filtered by stage (`"input"` / `"output"`) |
 | `get_rule(rule_id)` | Single input/output rule by ID |
@@ -141,10 +138,10 @@ if result.blocked:
 
 | Method | Purpose |
 |--------|---------|
-| `load_rules(path)` | Load input/output rules from disk (auto-detects path if omitted) |
-| `reload_rules()` | Hot-reload all input/output rules |
 | `start()` | Start audit logger (automatic on first detection) |
 | `stop()` | Flush and stop audit logger (call at shutdown) |
+
+> Note: `load_rules()` and `reload_rules()` are deprecated in v0.4 — the engine no longer reads rules from disk. Use `load_rules_from_list()` instead.
 
 ---
 
@@ -162,11 +159,9 @@ kasra/
 ├── actions/           Block, Warn, Redact, Clean, Truncate, SoftAllow, Dynamic
 ├── hooks/             Plugin lifecycle hooks, MetricsCollector
 ├── audit/             Async logger + Console/File exporters
-├── rules/             RuleLoader, RuleStore, checks
+├── rules/             RuleStore
 ├── config/            YAML config + env vars (KASRA_*)
-├── preprocessing/     Normalizer, Chunker
-├── context/           ChunkBuffer (streaming)
-└── cli.py             kasra-scan CLI
+└── preprocessing/     Normalizer, Chunker
 ```
 
 Two detection engines operate independently:
@@ -178,9 +173,11 @@ RuleEngine                    CodeReviewScanner
 └── track_behavior(...)       └── disable_rule(id)
 ```
 
-**Input/output rules** (`input-rules.json` / `output-rules.json`) → `RuleEngine` for runtime content safety.
+**Input/output rules** → `RuleEngine` for runtime content safety.
 
-**Code review rules** (`_code-review-rules.json`) → `CodeReviewScanner` for repository security audit.
+**Code review rules** → `CodeReviewScanner` for repository security audit.
+
+Rules are loaded from the database or an external list — the engine no longer reads from disk.
 
 ---
 
@@ -194,13 +191,13 @@ Three detection phases work together for code review — each runs in turn for e
 │   → AST-level matching, dataflow tracking (4 taint rules)│
 ├──────────────────────────────────────────────────────────┤
 │ Phase 1: Python Checkers (55 checkers)                   │
-│   → Injection, XSS, SSRF, auth, crypto, mobile, CVE, ... │
+│   → Injection, XSS, SSRF, auth, crypto, mobile, ...      │
 │   → Highest precision, context-aware confidence          │
 ├──────────────────────────────────────────────────────────┤
 │ Phase 2: JSON Patterns (regex + config engines)          │
 │   → Regex (format matching: AKIA, IP, email, ...)        │
 │   → Config YAML (K8s/Docker/Compose key-path parser)    │
-│   → Config Dockerfile (FROM/USER/ADD instruction parser)│
+│   → Config Dockerfile (FROM/USER/ADD instruction parser) │
 │   → Config key=value (.env/.properties parser)           │
 └──────────────────────────────────────────────────────────┘
 ```
@@ -228,21 +225,6 @@ Semgrep taint rules trace user input from source to sink:
 
 ---
 
-## CLI
-
-```bash
-kasra-scan info                       # Engine status
-kasra-scan list-rules                 # All loaded input/output rules
-kasra-scan input "password=123"       # Scan input text
-kasra-scan health                     # Health check
-kasra-scan metrics                    # Detection metrics
-kasra-scan review ./src               # Code review scan
-kasra-scan review ./src --json        # Code review as JSON
-kasra-scan review ./src --severity P0 # Only P0 findings
-```
-
----
-
 ## Code review features
 
 ### `.kasraignore`
@@ -265,17 +247,13 @@ Second scan skips unchanged files:
 from kasra.scanner.incremental import IncrementalScanner
 
 scanner = CodeReviewScanner()
-scanner.load_rules()
+scanner.set_rules(my_cr_rules)
 
 inc = IncrementalScanner(scanner, cache_dir=".kasra-cache")
 r1 = inc.scan("./src")   # Full scan, caches hashes
 r2 = inc.scan("./src")   # Only changed files
 inc.clear_cache()        # Force re-scan
 ```
-
-### CVE dependency checking
-
-SEC-40 checks `package.json`, `requirements.txt`, and `pom.xml` against an embedded database of known CVEs with proper semver comparison.
 
 ---
 
