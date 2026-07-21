@@ -446,6 +446,12 @@ class CodeReviewScanner:
             "SEC-22": ("_check_idor", ["py", "js", "ts", "java", "go", "cs", "php", "rb"], 0.35, "IDOR via route param to DB query"),
             "SEC-39": ("_check_dep_confusion", ["json", "txt"], 0.3, "Dependency confusion risk"),
 
+            # ── IAC — infrastructure-as-code structural checkers ──
+            "IAC-18": ("_check_iac_missing_healthcheck", [], 0.7, "Dockerfile missing HEALTHCHECK instruction"),
+            "IAC-19": ("_check_iac_lambda_vpc", ["yaml", "yml"], 0.7, "Lambda function not attached to VPC"),
+            "IAC-20": ("_check_iac_missing_networkpolicy", ["yaml", "yml"], 0.65, "K8s namespace without NetworkPolicy isolation"),
+            "IAC-21": ("_check_iac_helm_security_context", ["yaml", "yml"], 0.7, "Helm values missing securityContext"),
+
             # ── Data protection ──
             "SEC-55": ("_check_plaintext_password", ["py", "js", "ts", "java", "go", "cs", "php", "rb", "sql"], 0.45, "Password stored without hashing"),
             "SEC-56": ("_check_weak_password_policy", ["py", "js", "ts", "java", "go", "cs", "php", "rb"], 0.5, "Weak password policy"),
@@ -619,10 +625,18 @@ class CodeReviewScanner:
         patterns = [
             # Python subprocess with shell=True + variable
             (r"subprocess\.(?:call|Popen|run)\s*\([^)]*shell\s*=\s*True", 0.7),
+            # Python os.system with concatenation
+            (r"os\.system\s*\(\s*(?:f['\"]|['\"][^'\"]*\+)", 0.75),
             # Java Runtime.exec with concat
             (r"Runtime\.getRuntime\(\)\.exec\s*\([^)]*\+", 0.75),
+            # Java Runtime.exec with array (new String[]{"sh", "-c", var})
+            (r"Runtime\.getRuntime\(\)\.exec\s*\(\s*new\s+String\[\]", 0.7),
             # Go exec.Command("sh", "-c", ...)
             (r"exec\.Command\s*\(\s*['\"]sh['\"]\s*,\s*['\"]-c['\"]", 0.8),
+            # JS child_process.exec / execSync with template literal
+            (r"(?:exec|execSync)\s*\(\s*`[^`]*\$\{?\w+", 0.7),
+            # JS child_process.exec with f-string-like
+            (r"require\s*\(\s*['\"]child_process['\"]\s*\)", 0.55),
             # PHP shell_exec/system/exec
             (r"(?:shell_exec|exec)\s*\(\s*\$", 0.7),
             (r"system\s*\(\s*['\"][^'\"]*\$", 0.65),
@@ -630,6 +644,8 @@ class CodeReviewScanner:
             (r"`[^`]*\#\{?\w+[^`]*`", 0.65),
             # Ruby: exec/system/` with variable
             (r"(?:exec|system)\s*\(\s*(?:f['\"]|['\"][^'\"]*\+)", 0.65),
+            # Shell script: command with $variable injection risk
+            (r"\$\w+\s+#.*(?:injection|input|sanitiz)", 0.5),
         ]
         for pat, conf in patterns:
             try:
@@ -750,6 +766,8 @@ class CodeReviewScanner:
             (r"\|\s*safe\s*\}", 0.5, "safe filter"),
             # Angular innerHtml binding
             r"\[innerHtml\]\s*=\s*\w+",
+            # Express res.send with template literal (${var} in backtick string)
+            (r"res\.(?:send|render)\s*\(\s*`[^`]*\$\{", 0.65, "express template xss"),
         ]
         for pat in patterns:
             try:
@@ -780,6 +798,9 @@ class CodeReviewScanner:
             (r"fetch\s*\(\s*\w+(?:url|input|user|param|query|body|data)?\b", 0.55),
             # Java HttpClient.execute
             (r"HttpClient\.(?:execute|SendAsync)\s*\(\s*\w+", 0.6),
+            # Java new URL(url).openConnection
+            (r"new\s+URL\s*\(\s*\w+", 0.65),
+            (r"openConnection\s*\(\s*\)", 0.55),
             # Go http.Get(var) / http.Post(var)
             (r"http\.(?:Get|Post|NewRequest)\s*\(\s*\w+", 0.55),
             # Ruby open-uri
@@ -810,8 +831,10 @@ class CodeReviewScanner:
             (r"(?:include|require)\s*\(\s*['\"][^'\"]*\$\{?\w+", 0.7),
             # JS fs.readFile with variable
             (r"fs\.readFile\s*\(\s*\w+(?:input|user|param|query|path|file)?\b", 0.6),
-            # Python open with user variable
-            (r"\bopen\s*\(\s*\w+(?:input|user|filename|filepath|path)\b\s*[),]", 0.55),
+            # Python open with user variable or f-string
+            (r"\bopen\s*\(\s*(?:f['\"]|\w+(?:input|user|filename|filepath|path|page|file)\b)\s*[),]", 0.55),
+            # Java Files.newInputStream / Paths.get with variable
+            (r"Paths\.get\s*\([^)]*\w+(?:file|path|name|input|user)?\b", 0.55),
         ]
         for pat, conf in patterns:
             try:
@@ -834,6 +857,10 @@ class CodeReviewScanner:
             (r"(?i)\bcsrf_exempt\b", 0.85, "CSRF exempt"),
             (r"(?i)protect_from_forgery\s+(?:except|skip)", 0.7, "Forgery protection bypass"),
             (r"(?i)@CrossOrigin\([^)]*allowCredentials", 0.6, "CORS + CSRF risk"),
+            (r"(?i)csrf\(\)\.disable\(\)", 0.85, "Spring CSRF disabled"),
+            (r"(?i)\.csrf\(\)\.disable\(\)", 0.85, "Spring CSRF disabled chain"),
+            # HTML form to POST without CSRF token
+            ("<form[^>]*action=[^>]*method=[\"\']POST[\"\'][^>]*>", 0.5, "form no csrf"),
         ]
         for pat, conf, _ in patterns:
             try:
@@ -974,10 +1001,11 @@ class CodeReviewScanner:
         matches: list[dict[str, Any]] = []
         patterns = [
             (r"os\.system\s*\(", 0.85),
-            (r"subprocess\.(?:call|Popen|run)\s*\(", 0.75),
+            (r"subprocess\.(?:call|Popen|run|check_output|check_call)\s*\(", 0.75),
             (r"Runtime\.getRuntime\(\)\.exec\s*\(", 0.85),
             (r"exec\.Command\s*\(", 0.8),
             (r"child_process\.(?:exec|execSync|execFile|spawn)\s*\(", 0.8),
+            (r"(?:^|\W)execSync\s*\(", 0.75),
             (r"Process\.Start\s*\([^)]*['\"](?:cmd|bash|sh|powershell)", 0.8),
             (r"ProcessBuilder\s*\(", 0.75),
             (r"std::process::Command\s*::\s*new", 0.8),
@@ -1005,6 +1033,8 @@ class CodeReviewScanner:
             (r"(?i)\bhashlib\.sha1\b|\bMessageDigest\.getInstance\s*\(\s*['\"]SHA-?1", 0.85),
             (r"(?i)AES/ECB/", 0.85),
             (r"(?i)DES(?:CryptoServiceProvider|\.new)\b", 0.8),
+            (r"(?i)KeyGenerator\.getInstance\s*\(\s*['\"]DES", 0.8),
+            (r"(?i)Cipher\.getInstance\s*\(\s*['\"]DES", 0.8),
         ]
         for pat, conf in patterns:
             try:
@@ -1351,6 +1381,26 @@ class CodeReviewScanner:
                     "pattern": "password_assignment_plain",
                 })
 
+        # .insertOne / .insertMany with password field (MongoDB / NoSQL)
+        for m in re.finditer(r"\.insert(?:One|Many)?\s*\([^)]*password[^)]*\)", content, re.IGNORECASE):
+            ctx = content[max(0, m.start() - 300):m.end() + 100]
+            if not re.search(r"(?:bcrypt|argon2|scrypt|hash|pbkdf2)", ctx):
+                matches.append({
+                    "start": m.start(), "end": m.end(),
+                    "matched": m.group()[:200], "confidence": 0.55,
+                    "pattern": "password_insert_no_hash",
+                })
+
+        # stmt.execute("INSERT INTO ... password ... " + plaintext) — SQL concat with password
+        for m in re.finditer(r"(?:execute|exec|query)\s*\([^)]*password[^)]*\+[^)]*\)", content, re.IGNORECASE):
+            ctx = content[max(0, m.start() - 300):m.end() + 100]
+            if not re.search(r"(?:bcrypt|argon2|scrypt|hash|pbkdf2|make_password)", ctx):
+                matches.append({
+                    "start": m.start(), "end": m.end(),
+                    "matched": m.group()[:200], "confidence": 0.55,
+                    "pattern": "password_insert_no_hash",
+                })
+
         return matches
 
     @staticmethod
@@ -1455,6 +1505,189 @@ class CodeReviewScanner:
                     "pattern": "soft_delete_no_cleanup",
                 })
 
+        return matches
+
+    # ------------------------------------------------------------------
+    # IAC structural / absence checkers
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _check_iac_missing_healthcheck(content: str, rel_path: str) -> list[dict[str, Any]]:
+        """Check for missing HEALTHCHECK instruction in Dockerfiles."""
+        matches: list[dict[str, Any]] = []
+        basename = PurePosixPath(rel_path).name.lower()
+        if not basename.startswith("dockerfile"):
+            return matches
+
+        has_healthcheck = False
+        for line in content.split("\n"):
+            if line.strip().upper().startswith("HEALTHCHECK"):
+                has_healthcheck = True
+                break
+
+        if not has_healthcheck:
+            # Find a comment mentioning HEALTHCHECK or the last instruction line
+            pos = 0
+            for line in content.split("\n"):
+                if "MISSING" in line.upper() or "HEALTHCHECK" in line.upper():
+                    pos = content.find(line)
+                    break
+            if not pos:
+                pos = max(0, content.rfind("\nCMD") - 20)
+            matches.append({
+                "start": max(0, pos),
+                "end": max(0, pos + 60),
+                "matched": "Dockerfile missing HEALTHCHECK instruction — no container health probe defined",
+                "confidence": 0.7,
+                "pattern": "missing_healthcheck",
+            })
+        return matches
+
+    @staticmethod
+    def _check_iac_lambda_vpc(content: str, rel_path: str) -> list[dict[str, Any]]:
+        """Check for Lambda functions in CloudFormation without VpcConfig."""
+        matches: list[dict[str, Any]] = []
+        if PurePosixPath(rel_path).suffix.lower() not in (".yaml", ".yml"):
+            return matches
+
+        # Quick check: if this looks like CloudFormation
+        if "AWS::Lambda::Function" not in content and "AWSTemplateFormatVersion" not in content:
+            return matches
+
+        # Find all Lambda function resource blocks by scanning for Type: AWS::Lambda::Function
+        lines = content.split("\n")
+        in_lambda = False
+        lambda_start = 0
+        has_vpc = False
+
+        for i, line in enumerate(lines):
+            stripped = line.strip()
+            # Skip comments
+            if stripped.startswith("#"):
+                continue
+            # Detect start of a Lambda function resource
+            if "AWS::Lambda::Function" in stripped:
+                # Close previous Lambda if still open
+                if in_lambda and not has_vpc:
+                    matched = lines[lambda_start].strip()[:80]
+                    pos = sum(len(l) + 1 for l in lines[:lambda_start])
+                    matches.append({
+                        "start": pos, "end": pos + len(lines[lambda_start]),
+                        "matched": f"Lambda function without VpcConfig: {matched}",
+                        "confidence": 0.7, "pattern": "lambda_no_vpc",
+                    })
+                in_lambda = True
+                lambda_start = i
+                has_vpc = False
+            elif in_lambda:
+                # Check for VpcConfig key (actual YAML key, not in comments)
+                if stripped.startswith("VpcConfig") or stripped.startswith("VpcConfig:"):
+                    has_vpc = True
+                # Detect end of this resource block: next top-level key at same indent
+                # Lambda resource key is indented (e.g., "  ApiFunction:")
+                non_comment = stripped
+                if non_comment and not non_comment.startswith("#") and not non_comment.startswith("-"):
+                    # Check if we've returned to a parent indent level
+                    line_indent = len(line) - len(line.lstrip())
+                    lambda_indent = len(lines[lambda_start]) - len(lines[lambda_start].lstrip())
+                    if line_indent <= lambda_indent and ":" in non_comment and i > lambda_start + 2:
+                        if not has_vpc:
+                            matched = lines[lambda_start].strip()[:80]
+                            pos = sum(len(l) + 1 for l in lines[:lambda_start])
+                            matches.append({
+                                "start": pos, "end": pos + len(lines[lambda_start]),
+                                "matched": f"Lambda function without VpcConfig: {matched}",
+                                "confidence": 0.7, "pattern": "lambda_no_vpc",
+                            })
+                        in_lambda = False
+
+        # Check last Lambda
+        if in_lambda and not has_vpc:
+            matched = lines[lambda_start].strip()[:80]
+            pos = sum(len(l) + 1 for l in lines[:lambda_start])
+            matches.append({
+                "start": pos, "end": pos + len(lines[lambda_start]),
+                "matched": f"Lambda function without VpcConfig: {matched}",
+                "confidence": 0.7, "pattern": "lambda_no_vpc",
+            })
+        return matches
+
+    @staticmethod
+    def _check_iac_missing_networkpolicy(content: str, rel_path: str) -> list[dict[str, Any]]:
+        """Check for Kubernetes manifests that create workloads without a NetworkPolicy."""
+        matches: list[dict[str, Any]] = []
+        if PurePosixPath(rel_path).suffix.lower() not in (".yaml", ".yml"):
+            return matches
+
+        # Must contain K8s workload kinds (YAML key at start of line, not in comments)
+        has_workload = any(
+            re.search(rf"(?m)^(?:#.*)?\s*{kwd}", content)
+            for kwd in ("kind:\\s*Deployment", "kind:\\s*Pod", "kind:\\s*StatefulSet",
+                        "kind:\\s*DaemonSet", "kind:\\s*Service")
+        )
+        if not has_workload:
+            return matches
+
+        # Check if any NetworkPolicy resource exists — match at YAML block level (start of line)
+        has_network_policy = bool(re.search(r"(?m)^kind:\s*NetworkPolicy\b", content))
+
+        if not has_network_policy:
+            pos = 0
+            for m in re.finditer(r"(?m)^kind:\s*(?:Deployment|Pod|Service|StatefulSet|DaemonSet)\b", content):
+                pos = m.start()
+                break
+            if not pos:
+                for m in re.finditer(r"(?i)network", content):
+                    pos = m.start()
+                    break
+            matches.append({
+                "start": max(0, pos),
+                "end": max(0, pos + 60),
+                "matched": "No NetworkPolicy found — pods can communicate freely across the namespace",
+                "confidence": 0.65,
+                "pattern": "missing_networkpolicy",
+            })
+        return matches
+
+    @staticmethod
+    def _check_iac_helm_security_context(content: str, rel_path: str) -> list[dict[str, Any]]:
+        """Check Helm values.yaml for missing securityContext / podSecurityContext."""
+        matches: list[dict[str, Any]] = []
+        basename = PurePosixPath(rel_path).name.lower()
+        # Only target Helm value files
+        if "values" not in basename and "chart" not in basename:
+            return matches
+        if PurePosixPath(rel_path).suffix.lower() not in (".yaml", ".yml"):
+            return matches
+
+        # Check for actual YAML keys (not comment mentions)
+        has_security_context = bool(re.search(r"(?m)^\s*securityContext:", content))
+        has_pod_security = bool(re.search(r"(?m)^\s*podSecurityContext:", content))
+        has_readonly_rootfs = bool(re.search(r"(?m)^\s*readOnlyRootFilesystem:", content))
+
+        if not has_security_context or not has_readonly_rootfs:
+            pos = 0
+            for m in re.finditer(r"(?m)^\s*(?:image:|tag:)", content):
+                pos = m.start()
+                break
+            if not pos:
+                for m in re.finditer(r"(?i)(?:security|value)", content):
+                    pos = m.start()
+                    break
+            missing = []
+            if not has_security_context:
+                missing.append("securityContext")
+            if not has_pod_security:
+                missing.append("podSecurityContext")
+            if not has_readonly_rootfs:
+                missing.append("readOnlyRootFilesystem")
+            matches.append({
+                "start": max(0, pos),
+                "end": max(0, pos + 60),
+                "matched": f"Helm values missing security hardening: {', '.join(missing)} not set",
+                "confidence": 0.7,
+                "pattern": "missing_security_context",
+            })
         return matches
 
     # ------------------------------------------------------------------
