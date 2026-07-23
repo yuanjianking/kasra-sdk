@@ -118,7 +118,8 @@ class AnalysisContext(BaseModel):
     Layers 4-5 run post-matching on aggregated results.
     """
 
-    content: str = Field(default="", description="Original content being analysed")
+    content: str = Field(default="", description="Original content being analysed (after preprocessing)")
+    raw_content: str | None = Field(default=None, description="Raw content before preprocessing (for control char rules)")
 
     # ---- Layer 2: Syntactic ----
     detected_language: str | None = Field(default=None, description="Overall content language")

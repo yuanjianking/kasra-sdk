@@ -387,3 +387,48 @@ def check_csrf_xss(content: str) -> list[dict[str, Any]]:
     for pat, conf, tag in patterns:
         results.extend(_match(content, pat, conf, tag))
     return results
+
+
+# ===================================================================
+# I-series checkers (input detection via Python logic)
+# ===================================================================
+
+@register("I-43")
+def check_oversized_input(content: str) -> list[dict[str, Any]]:
+    """Detect oversized input exceeding 100,000 characters.
+    Triggers truncation action when content exceeds the threshold.
+    """
+    threshold = 100000
+    if len(content) > threshold:
+        return [{
+            "start": 0,
+            "end": min(len(content), 200),
+            "matched": f"Content length {len(content)} exceeds {threshold} character limit",
+            "confidence": 1.0,
+            "pattern": "oversized_input",
+        }]
+    return []
+
+
+@register("I-48")
+def check_context_reset(content: str) -> list[dict[str, Any]]:
+    """Detect context reset bypass attempts.
+    Catches multi-phrase reset attempts in Chinese.
+    """
+    results: list[dict[str, Any]] = []
+    patterns = [
+        (r"(?:忘记|清除|清空|重置|忽略|忽略掉|删除|移除|丢弃)\s*(?:所有|全部|之前|过去的|以前的)\s*(?:对话|聊天|历史|记录|记忆|内容|上下文|context)", 0.6),
+        (r"(?:重新开始|新对话|新会话|新聊天|重新会话)\s*(?:对话|聊天|session|conversation)?", 0.5),
+        (r"(?:不要|不需要|不用|别)\s*(?:记忆|记住|记得|上下文|历史|之前)", 0.5),
+    ]
+    for pat, conf in patterns:
+        try:
+            for m in re.finditer(pat, content, re.IGNORECASE):
+                results.append({
+                    "start": m.start(), "end": m.end(),
+                    "matched": m.group()[:200], "confidence": conf,
+                    "pattern": "context_reset_chinese",
+                })
+        except re.error:
+            pass
+    return results

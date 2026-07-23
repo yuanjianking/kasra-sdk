@@ -40,6 +40,9 @@ from kasra.models.rule import PatternDefinition, RuleDefinition
 from kasra.matchers.base import PatternMatcher
 from kasra.analyzers.context import AnalysisContext, EvidenceItem, MatchContext
 from kasra.rules.checks import has_checker, get_checker
+
+# Rules that need to run on raw (pre-normalization) content
+_RAW_CONTENT_RULES = {"I-29", "I-32", "I-44"}
 from kasra.analyzers.semgrep_adapter import SemgrepRunner, has_semgrep_patterns
 
 
@@ -289,10 +292,12 @@ class RuleRunner:
             _match_via_semgrep(content, rule.id, all_matches, evidence)
 
             # Also run standard regex patterns (complements Python checkers / semgrep)
+            raw_override = analysis_context.raw_content if (analysis_context and rule.id in _RAW_CONTENT_RULES and analysis_context.raw_content is not None) else None
+            effective_content = raw_override or content
             pattern_results: list[list[MatchResult]] = []
             for idx, pattern in enumerate(rule.detection.patterns):
                 matches = self._dispatcher.match(
-                    content,
+                    effective_content,
                     pattern,
                     max_matches=effective_max_matches,
                 )

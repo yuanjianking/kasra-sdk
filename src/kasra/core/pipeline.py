@@ -126,6 +126,8 @@ class DetectionPipeline(ABC):
         """
         with timer() as t:
             # 1. Preprocess
+            # Save raw content before preprocessing (for control char rules)
+            raw_saved = content
             if preprocess:
                 content = self.preprocess(content)
 
@@ -137,6 +139,7 @@ class DetectionPipeline(ABC):
 
             # 2. Layer 2: Run analyzer pipeline (syntactic analysis)
             analysis_context = self._analyzer_pipeline.execute(content)
+            analysis_context.raw_content = raw_saved
 
             # 3. Rules
             rules = self.get_rules()
