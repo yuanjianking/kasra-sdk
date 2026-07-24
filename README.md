@@ -277,6 +277,12 @@ export KASRA_ENGINE__MAX_CONCURRENT_RULES=50
 
 ---
 
+## License
+
+This project is licensed under the [MIT License](LICENSE).
+
+---
+
 ## Development
 
 ```bash

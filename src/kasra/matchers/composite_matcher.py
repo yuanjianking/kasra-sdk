@@ -53,8 +53,9 @@ class CompositeMatcher(PatternMatcher):
         regex_matcher: ReMatcher | None = None,
         keyword_matcher: KeywordMatcher | None = None,
         entropy_matcher: EntropyMatcher | None = None,
+        case_insensitive: bool = True,
     ) -> None:
-        self._regex = regex_matcher or ReMatcher()
+        self._regex = regex_matcher or ReMatcher(case_insensitive=case_insensitive)
         self._keyword = keyword_matcher or KeywordMatcher()
         self._entropy = entropy_matcher or EntropyMatcher()
 

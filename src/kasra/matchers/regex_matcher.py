@@ -20,11 +20,18 @@ class ReMatcher(PatternMatcher):
       - The LRU cache is a plain ``OrderedDict``; in a multi-threaded
         scenario use ``self._cache`` under a lock or switch to
         ``functools.lru_cache`` which is thread-safe in CPython.
+
+    Case sensitivity:
+      By default (``case_insensitive=True``) all patterns are compiled
+      with ``re.IGNORECASE`` so that lowercase keyword patterns match
+      uppercase content.  Set ``case_insensitive=False`` to restore
+      standard case-sensitive behaviour.
     """
 
-    def __init__(self, cache_size: int = 1024) -> None:
+    def __init__(self, cache_size: int = 1024, case_insensitive: bool = False) -> None:
         self._cache_size = cache_size
         self._cache: OrderedDict[str, re.Pattern[str]] = OrderedDict()
+        self._case_insensitive = case_insensitive
 
     # ------------------------------------------------------------------
     # Public API
@@ -106,8 +113,12 @@ class ReMatcher(PatternMatcher):
             self._cache.move_to_end(pattern)
             return self._cache[pattern]
 
+        flags = re.UNICODE
+        if self._case_insensitive:
+            flags |= re.IGNORECASE
+
         try:
-            compiled = re.compile(pattern, re.UNICODE)
+            compiled = re.compile(pattern, flags)
         except re.error as exc:
             raise PatternCompileError(f"Invalid regex: {pattern!r}: {exc}") from exc
 

@@ -56,9 +56,9 @@ class MatcherDispatcher:
     All matchers are created once at startup and reused across all rules.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, case_insensitive: bool = True) -> None:
         self._matchers: dict[PatternType, PatternMatcher] = {
-            PatternType.REGEX: ReMatcher(),
+            PatternType.REGEX: ReMatcher(case_insensitive=case_insensitive),
             PatternType.KEYWORD: KeywordMatcher(),
             PatternType.ENTROPY: EntropyMatcher(),
             PatternType.COMPOSITE: CompositeMatcher(),
